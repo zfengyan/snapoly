@@ -1,7 +1,7 @@
 #ifndef ENHANCED_CONSTRAINED_DELAUNAY_TRINGULATION_2_H
 #define ENHANCED_CONSTRAINED_DELAUNAY_TRINGULATION_2_H
 
-#include "pch.h"
+//#include "pch.h"
 
 template <class T>
 class Enhanced_constrained_triangulation_2;
@@ -107,7 +107,7 @@ typedef CGAL::Segment_2<Kernel> Segment_2; // for line segments [p,q] connecting
 /*
 * helpers
 */
-typedef CDT::Point Point; // Kernel::Point_2
+// typedef CDT::Point Point; // Kernel::Point_2 would be conflict with geom::Point, thus we explicitly use Kernel::Point_2
 typedef CDT::Vertex Vertex;
 typedef CDT::Edge Edge; // Edge: pair<Face_handle, int>
 typedef CDT::Edge_circulator Edge_circulator;

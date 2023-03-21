@@ -1,9 +1,6 @@
 
 #include "pch.h"
-#include "Snap_rounding_2.h"
-
-using namespace geos::geom;
-using namespace geos::operation::polygonize;
+#include "io.h"
 
 
 /*
@@ -15,57 +12,48 @@ using namespace geos::operation::polygonize;
 
 int main()
 {
-	
+	Snap_rounding_2 sr_2;
+
+	Constraint c1(Kernel::Point_2(3.0, 2.0), Kernel::Point_2(3.0, 4.0));
+	Constraint c2(Kernel::Point_2(5.0, 2.0), Kernel::Point_2(5.0, 4.0));
+	Constraint c3(Kernel::Point_2(3.0, 4.0), Kernel::Point_2(5.0, 4.0));
+	Constraint c4(Kernel::Point_2(3.0, 2.0), Kernel::Point_2(5.0, 2.0)); 
+
+	Constraint c5(Kernel::Point_2(4.0, 2.5), Kernel::Point_2(3.5, 3.0));
+	Constraint c6(Kernel::Point_2(4.5, 3.0), Kernel::Point_2(4.0, 3.5));
+	Constraint c7(Kernel::Point_2(4.0, 2.5), Kernel::Point_2(4.5, 3.0));
+	Constraint c8(Kernel::Point_2(3.5, 3), Kernel::Point_2(4.0, 3.5));
+
+	Constraint c9(Kernel::Point_2(5.0, 2.0), Kernel::Point_2(6.0, 1.0));
+
+	sr_2.constraintsWithInfo.emplace_back(c1);
+	sr_2.constraintsWithInfo.emplace_back(c2);
+	sr_2.constraintsWithInfo.emplace_back(c3);
+	sr_2.constraintsWithInfo.emplace_back(c4);
+	sr_2.constraintsWithInfo.emplace_back(c5);
+	sr_2.constraintsWithInfo.emplace_back(c6);
+	sr_2.constraintsWithInfo.emplace_back(c7);
+	sr_2.constraintsWithInfo.emplace_back(c8);
+	sr_2.constraintsWithInfo.emplace_back(c9);
+
+
+	//////////////////////////////////////////////////////////////////////
+
+	// for each constraint, two points -> two Coordinates objects
+
+	//////////////////////////////////////////////////////////////////////
+
 	
 	vector<vector<Coordinate>> coordinates;
 
-	// line string 1
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(3, 2));
-	coordinates.back().emplace_back(Coordinate(3, 4));
-
-	// line string 2
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(5, 2));
-	coordinates.back().emplace_back(Coordinate(5, 4));
-
-	// line string 3
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(3, 4));
-	coordinates.back().emplace_back(Coordinate(5, 4));
-
-	// line string 4
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(3, 2));
-	coordinates.back().emplace_back(Coordinate(5, 2));
-
-	// hole 1 - line string 1
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(4, 2.5));
-	coordinates.back().emplace_back(Coordinate(3.5, 3));
-
-	// hole 1 - line string 2
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(4.5, 3));
-	coordinates.back().emplace_back(Coordinate(4, 3.5));
-
-	// hole 1 - line string 3
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(4, 2.5));
-	coordinates.back().emplace_back(Coordinate(4.5, 3));
-
-	// hole 1 - line string 4
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(3.5, 3));
-	coordinates.back().emplace_back(Coordinate(4, 3.5));
-
-	// dangling line string
-	coordinates.emplace_back();
-	coordinates.back().emplace_back(Coordinate(5, 2));
-	coordinates.back().emplace_back(Coordinate(6, 1));
+	for (auto const& cons : sr_2.constraintsWithInfo) {
+		coordinates.emplace_back();
+		coordinates.back().emplace_back(Coordinate(cons.p0.x(), cons.p0.y()));
+		coordinates.back().emplace_back(Coordinate(cons.p1.x(), cons.p1.y()));
+	}
 
 	// coordinate sequences
-	std::size_t coordinates_size = 2;
+	std::size_t numOfVerticesOfLineString = 2;
 
 	// createLineString accepts pointer of CoordinateSequence
 	// the ownership of CoordinateSequence object will be assumed by global_factory->createLineString()
@@ -75,7 +63,7 @@ int main()
 
 
 	for (int i = 0; i < coordinates.size(); ++i) {
-		CoordinateSequence* c = new CoordinateArraySequence(coordinates_size, 2);
+		CoordinateSequence* c = new CoordinateArraySequence(numOfVerticesOfLineString, 2);
 		c->setPoints(coordinates[i]);
 		coordinateSequences.push_back(c); // make a copy of the pointer
 	}

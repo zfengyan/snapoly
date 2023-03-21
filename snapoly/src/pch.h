@@ -27,3 +27,7 @@
 #include <geos/geom/Polygon.h>
 #include <geos/operation/polygonize/Polygonizer.h>
 
+#include <ogrsf_frmts.h> // GDAL
+
+#include <filesystem>
+
