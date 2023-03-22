@@ -10,6 +10,14 @@
 * i.e. which is the biggest polygon -> the biggest polygon should contain the other polygons
 */
 
+// Attention
+// geos namespace may contain same class name like Point
+// which will probably be conflict with CDT typedefs
+using namespace geos::geom;
+using namespace geos::operation::polygonize;
+
+
+
 int main()
 {
 	Snap_rounding_2 sr_2;
@@ -42,7 +50,7 @@ int main()
 	// for each constraint, two points -> two Coordinates objects
 
 	//////////////////////////////////////////////////////////////////////
-
+	
 	
 	vector<vector<Coordinate>> coordinates;
 
@@ -130,6 +138,15 @@ int main()
 		delete geoms[i];
 	}
 	//delete geoms;
+
+
+
+	Kernel::Point_2 p0(1, 1), p1(1, 3);
+	cout << CGAL::midpoint(p0, p1);
+
+	//Point p;
+
+	//Edge e;
 
 
 	return 0;

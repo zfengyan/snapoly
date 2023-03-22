@@ -3,8 +3,6 @@
 
 #include "Snap_rounding_2.h"
 
-using namespace geos::geom;
-using namespace geos::operation::polygonize;
 
 namespace snapoly {
 	namespace io {

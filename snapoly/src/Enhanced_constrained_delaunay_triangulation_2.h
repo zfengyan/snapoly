@@ -17,10 +17,10 @@ using std::list;
 
 // constants
 namespace snapoly {
-	namespace constant {
+	namespace constants {
 		const double DOUBLE_MAX = std::numeric_limits<double>::max(); // maximum value of type double
-		const int DOESNT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
-		const double epsilon = 1e-15; // epsilon: tolerance 1e-8 by default? or use a more accurate value such as 1e-15?
+		const int NOT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
+		const double EPSILON = 1e-15; // epsilon: tolerance 1e-8 by default? or use a more accurate value such as 1e-15?
 	}
 }
 
@@ -89,7 +89,7 @@ typedef CGAL::Segment_2<Kernel> Segment_2; // for line segments [p,q] connecting
 /*
 * helpers
 */
-// typedef CDT::Point Point; // Kernel::Point_2 would be conflict with geom::Point, thus we explicitly use Kernel::Point_2
+typedef CDT::Point Point; // Point would be conflict with geom::Point, thus we explicitly use Point
 typedef CDT::Vertex Vertex;
 typedef CDT::Edge Edge; // Edge: pair<Face_handle, int>
 typedef CDT::Edge_circulator Edge_circulator;
@@ -162,7 +162,154 @@ class Enhanced_constrained_delaunay_triangulation_2 : public CDT {
 	Kernel::FT squared_height(const Face_handle& face, int i) const;
 
 
+	/*
+	* get the centroid of a face
+	* pa, pb, pc are three vertices of a face
+	* yields a new point
+	* 
+	* @return: Point
+	*/
+	Point face_centroid(const Point& pa, const Point& pb, const Point& pc) const;
 
+
+	/*
+	* get the centroid of a face
+	* va, vb, vc are three vertex handles of a face
+	* yields a new point
+	* 
+	* @return: Point
+	*/
+	Point face_centroid(const Vertex_handle& va, const Vertex_handle& vb, const Vertex_handle& vc) const;
+
+
+	/*
+	* get the centroid of a face
+	* yields a new point
+	* 
+	* @return: Point
+	*/
+	Point face_centroid(const Face_handle& face) const;
+
+
+	/*
+	* get the centroid(midpoint) of an edge
+	* yields a new point
+	* 
+	* @return: Point
+	*/
+	Point edge_centroid(const Edge& edge) const;
+
+
+	/*
+	* get the two vertex handles of an Edge
+	* Edge(incidentFace, oppositeVertex) represents for an edge
+	*/
+	std::pair<Vertex_handle, Vertex_handle> vertices_of_edge(const Face_handle& incidentFace, int oppositeVertex) const;
+
+
+	/*
+	* get the two vertex handles of an Edge
+	*/
+	std::pair<Vertex_handle, Vertex_handle> vertices_of_edge(const Edge& edge) const;
+
+
+
+	
+
+
+	/*
+	* get incident constrained vertices of a certain vertex
+	* the edges between the certain vertex and its incident vertices are constrained
+	* and we call these incident vertices as "constrained incident vertices"
+	* 
+	* this function also allows to omit a certain incident constrained vertex.
+	* 
+	* @param targetVh a Vertec_handle indicating a certain vertex
+	* @param omitVh a Vertex_handle if it is provided, then among all constrained vertices of targetVertex, this vertex would be omitted
+	* if there is an constrained edge between targetVertex and omitVertex
+	* @param constrained_incident_vertices_vec where all constrained incident vertices are stored
+	* 
+	* @note providing an omitVertex parameter is useful when snap rounding two close vertices
+	* for example, in snap rounding, we want to keep the constrained incident vertices of two close vertices respectively
+	* suppose targetVertex and omitVertex are two close vertices, when we find constrained incident vertices of targetVertex
+	* if the edge between targetVertex and omitVertex is constrained, then omitVertex will also be added into the vec
+	* later when we re-introduce the constraints, there will be a new constraint between the midpoint and the omitVertex
+	* then they become close vertices again
+	* Therefore we need to omit that vertex when performing snap rounding on close vertices.
+	* 
+	* @return void the constrained incident vertices will be added into the constrained_incident_vertices_vec
+	*/
+	void get_constrained_incident_vertices(
+		const Vertex_handle& targetVh, 
+		vector<Point>& constrained_incident_vertices_vec, 
+		Vertex_handle omitVh = Vertex_handle()) const;
+
+
+	/*
+	* judge if two edges are in the same location
+	* va, vb are the two vertices of edge A
+	* vc, vd are the two vertices of edge B
+	* if only:
+	* va->point() == vc->point() && vb->point() == vd->point()
+	* or
+	* va->point() == vd->point() && vb->point() == vc->point()
+	* the two edges are the same
+	* 
+	* @return bool return true if two edges are in the same location otherwise false
+	*/
+	bool is_same_edge_by_location(const Edge& edgeA, const Edge& edgeB) const;
+
+
+	/*
+	* get the common edge of two faces
+	* 
+	* @return Edge if common edge is found return the common edge, if not return an edge with edge.second = -1 
+	* indicating there is no common edge between faceA and faceB
+	*/
+	Edge common_edge(const Face_handle& faceA, const Face_handle& faceB) const;
+
+
+	/*
+	* remove an edge
+	* the removing operation is done by removing two vertices of an edge from the triangulation
+	*/
+	void remove_edge(Edge& edge);
+
+
+
+
+
+
+	/*
+	* if the length of an edge(f, opposite_vertex) in the triangulation is smaller than the given tolerance
+	* this means the two vertices are considered close within the tolerance
+	* 
+	* @param f Face_handle
+	* @param opposite_vertex int
+	* @param squared_tolerance double note that tolerance = sqrt(squared_tolerance)
+	* 
+	* @return bool return true if an edge's length is smaller than a certain tolerance
+	*/
+	bool is_degenerate_edge(const Face_handle& f, int opposite_vertex, double squared_tolerance) const;
+
+
+	/*
+	* return true if an edge's length is smaller than a certain tolerance
+	* same as above
+	*/
+	bool is_degenerate_edge(const Edge& edge, double squared_tolerance) const;
+
+
+	/*
+	* find and return the degenerate edge with minimum length (<= tolerance) in each traversal
+	* if not found, return an Edge object with edge.second = NOT_EXIST
+	* 
+	* @param squared_tolerance the squared tolerance
+	* 
+	* @return std::tuple<Face_handle, int, Kernel::FT>
+	* Edge(Face_handle, int) and the minimum squared length will be returned
+	*/
+	std::tuple<Face_handle, int, Kernel::FT> find_minimum_degenerate_edge(double squared_tolerance) const;
 };
 
 
