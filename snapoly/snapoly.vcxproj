@@ -165,6 +165,7 @@
     <ClInclude Include="src\Snap_rounding_2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Enhanced_constrained_delaunay_triangulation_2.cpp" />
     <ClCompile Include="src\io.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\pch.cpp">

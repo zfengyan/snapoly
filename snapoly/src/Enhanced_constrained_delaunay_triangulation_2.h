@@ -16,73 +16,55 @@ using std::map;
 using std::list;
 
 // constants
-const double epsilon = 1e-15; // epsilon: tolerance 1e-8 by default? or use a more accurate value such as 1e-15?
-const double DOUBLE_MAX = std::numeric_limits<double>::max(); // maximum value of type double
-const int DOESNT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
+namespace snapoly {
+	namespace constant {
+		const double DOUBLE_MAX = std::numeric_limits<double>::max(); // maximum value of type double
+		const int DOESNT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
+		const double epsilon = 1e-15; // epsilon: tolerance 1e-8 by default? or use a more accurate value such as 1e-15?
+	}
+}
 
 
 /*
 * customized VertexInfo and FaceInfo - for using constrained delaunay triangulation
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 struct VertexInfo2
-{
-	VertexInfo2() { someAttri = 1; }
-	int someAttri;
-	void print() const {
-		std::cout << "someAttri: " << someAttri << std::endl;
-	}
-};
+{};
 struct FaceInfo2
 {
-	int nesting_level;
 	vector<string> faceid_collection; // can we use const char*? will there be any memory issues?
 	bool processed; // used for tagging process
 	//bool local_constraints_tagged; // used for adding tags to local constraints of polygons
 
 	FaceInfo2()
-		: nesting_level(-1), faceid_collection(), processed(false)
+		: faceid_collection(), processed(false)
 	{
 		faceid_collection.emplace_back("unknown"); // at least the faceid collection contains one id
 	} // reserve? how many ids can a face have at most?
 
-	bool in_domain() const {
-		return nesting_level % 2 == 1; // if nesting_level is odd numbers
-	}
-	void print() const {
-		std::cout << "nesting_level " << nesting_level << std::endl;
-	}
-
 };
-
-
 
 // [[maybe used]] Edge with info
 struct Edge_with_info
 {
-	Edge_with_info() : x1(0), y1(0), x2(0), y2(0), is_constrained(false) {}
-	Edge_with_info(double param_x1, double param_y1, double param_x2, double param_y2) :
-		x1(param_x1), y1(param_y1), x2(param_x2), y2(param_y2), is_constrained(false) {}
-
-	bool operator==(const Edge_with_info& rhs) const {
-		return (
-			((std::abs(this->x1 - rhs.x1) < epsilon) &&
-				(std::abs(this->y1 - rhs.y1) < epsilon) &&
-				(std::abs(this->x2 - rhs.x2) < epsilon) &&
-				(std::abs(this->y2 - rhs.y2) < epsilon)) ||
-			((std::abs(this->x1 - rhs.x2) < epsilon) &&
-				(std::abs(this->y1 - rhs.y2) < epsilon) &&
-				(std::abs(this->x2 - rhs.x1) < epsilon) &&
-				(std::abs(this->y2 - rhs.y1) < epsilon))
-			);
-	} // overloading == operator, for find() function with std::vector<Edge_with_info>
-
 	double x1;
 	double y1;
 	double x2;
 	double y2;
 	bool is_constrained;
-};
+	
+	Edge_with_info() : x1(0), y1(0), x2(0), y2(0), is_constrained(false) {}
+	Edge_with_info(double param_x1, double param_y1, double param_x2, double param_y2) :
+		x1(param_x1), y1(param_y1), x2(param_x2), y2(param_y2), is_constrained(false) {}
 
+	/*
+	* compare if two edges are the same
+	*
+	* @param rhs: an rhs object which will be compared
+	* @return bool: return true if same by location, otherwise false
+	*/
+	bool operator==(const Edge_with_info& rhs) const;	
+};
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
@@ -119,5 +101,69 @@ typedef CDT::Face_circulator Face_circulator;
 typedef CDT::Locate_type Locate_type; // Locate_type: enum
 typedef CDT::List_faces List_faces; // list of facets
 typedef CDT::List_edges List_edges; // list of edges
+
+
+
+/*
+* Enhanced constrained Delaunay triangulation class, inherited from CDT class
+* for management of the constrained Delaunay triangulation
+* and provide necessary functions for snap rounding.
+*/
+class Enhanced_constrained_delaunay_triangulation_2 : public CDT {
+
+	/*
+	* calculate and return the length of an edge(f, i)
+	* Principally the Face_handle can be an infinite face
+	* 
+	* @param f: a CDT::Face_handle
+	* @param i: the opposite vertex index, Edge(f, i) represnets 
+	* an edge opposite to vertex f->vertex(i) in the face f.
+	* 
+	* @return Kernel::FT the internal Field Type of CGAL.
+	*/
+	Kernel::FT squared_length(const Face_handle& f, int i) const;
+
+
+	/*
+	* calculate and return the length of an edge.
+	* 
+	* @return Kernel::FT the internal Field Type of CGAL.
+	*/
+	Kernel::FT squared_length(const Edge& edge) const;
+
+
+	/*
+	* calculate and return the unsigned area of a triangle formed by three points: p, q, r
+	* 
+	* @return Kernel::FT the internal Field Type of CGAL.
+	*/
+	Kernel::FT area(const Point& p, const Point& q, const Point& r) const;
+
+
+	/*
+	* calculate and return the unsigned area of a face
+	* in Constrained Delaunay triangulation, a face represents for a triangle.
+	* 
+	* @note the face must be checked if it is an infinite face, if
+	* it is an infinite face, snapoly::constant::DOUBLE_MAX will be returned
+	* 
+	* @return Kernel::FT the internal Field Type of CGAL.
+	*/
+	Kernel::FT area(const Face_handle& face) const;
+
+
+	/*
+	* return the squared height of a face based on a certain base edge
+	* in Constrained Delaunay triangulation, a face means a triangle
+	* the base edge is Edge(face, i), according to which the height is calculated.
+	* 
+	* @return Kernel::FT the internal Field Type of CGAL.
+	*/
+	Kernel::FT squared_height(const Face_handle& face, int i) const;
+
+
+
+};
+
 
 #endif // !ENHANCED_CONSTRAINED_DELAUNAY_TRINGULATION_2_H

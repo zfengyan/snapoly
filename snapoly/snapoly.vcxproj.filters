@@ -38,5 +38,8 @@
     <ClCompile Include="src\io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Enhanced_constrained_delaunay_triangulation_2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
