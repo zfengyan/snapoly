@@ -111,6 +111,8 @@ typedef CDT::List_edges List_edges; // list of edges
 */
 class Enhanced_constrained_delaunay_triangulation_2 : public CDT {
 
+public:
+
 	/*
 	* calculate and return the length of an edge(f, i)
 	* Principally the Face_handle can be an infinite face
@@ -213,10 +215,6 @@ class Enhanced_constrained_delaunay_triangulation_2 : public CDT {
 	std::pair<Vertex_handle, Vertex_handle> vertices_of_edge(const Edge& edge) const;
 
 
-
-	
-
-
 	/*
 	* get incident constrained vertices of a certain vertex
 	* the edges between the certain vertex and its incident vertices are constrained
@@ -276,10 +274,6 @@ class Enhanced_constrained_delaunay_triangulation_2 : public CDT {
 	void remove_edge(Edge& edge);
 
 
-
-
-
-
 	/*
 	* if the length of an edge(f, opposite_vertex) in the triangulation is smaller than the given tolerance
 	* this means the two vertices are considered close within the tolerance
@@ -310,7 +304,48 @@ class Enhanced_constrained_delaunay_triangulation_2 : public CDT {
 	* Edge(Face_handle, int) and the minimum squared length will be returned
 	*/
 	std::tuple<Face_handle, int, Kernel::FT> find_minimum_degenerate_edge(double squared_tolerance) const;
+
+
+	/*
+	* for better alignment with concepts
+	*/
+	std::tuple<Face_handle, int, Kernel::FT> find_minimum_vertex_to_vertex(double squared_tolerance) const;
+
+
+	/*
+	* if an edge (face, i) is a sliver base edge / constrained sliver base edge
+	* 
+	* in a finite face there are 3 edges: Edge(face, 0), Edge(face, 1), Edge(face, 2)
+	* the corresponding heights are: height0, height1, height2
+	* for example, if height0 <= tolerance, that indicates the face is sliver (or skinny)
+	* then Edge(face, 0) is called a "sliver base" - the same applies on height1 and hright2
+	* if Edge(face, 0) is also constrained, then it is called a "constrained sliver base"
+	* 
+	* @param face a Face_handle
+	* @param i opposite vertex
+	* (face, i) forms an edge: the edge which is opposite to the vertex i of the face
+	* @param squared_tolerance squared tolerance
+	* @param constrained_flag indicates whether an edge is a constrained sliver base edge / sliver base edge
+	* e.g. 
+	* is_sliver_base(face, i, squared_tolerance) = true -> Edge(face, i) is a sliver base but not constrained
+	* is_sliver_base(face, i, squared_tolerance, true) = true -> Edge(face, i) is a constrained sliver base
+	* @return: bool return true if it is a sliver constrained base edge return false otherwise
+	*
+	* ATTENTION
+	* Note that the projection of the opposite vertex onto the constrained base might not be within it
+	* thus this type of triangle should not be snapped -
+	* - currently by comparing the height and CGAL::squared_distance(Point_2, Segment_2).
+	* if the projection of the opposite vertex is within the segnment
+	* then std::abs(height - CGAL::squared_distance(Point_2, Segment_2)) < epsilon
+	* if not, the CGAL::squared_distance(Point_2, Segment_2) would be the squared distance
+	* from the Point_2 and the closest point of Segment_2, which should be one of its two ends
+	* and this value will be larger than squared height
+	*/
+	bool is_sliver_base(const Face_handle& face, int i, double squared_tolerance, bool constrained_flag = false) const;
 };
+
+
+typedef Enhanced_constrained_delaunay_triangulation_2 Enhanced_triangulation;
 
 
 #endif // !ENHANCED_CONSTRAINED_DELAUNAY_TRINGULATION_2_H

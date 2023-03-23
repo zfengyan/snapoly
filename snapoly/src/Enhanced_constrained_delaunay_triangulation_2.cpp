@@ -315,6 +315,55 @@ std::tuple<Face_handle, int, Kernel::FT> Enhanced_constrained_delaunay_triangula
 	return std::make_tuple(e.first, e.second, min_squared_length);
 }
 
+// better alignment with concepts
+std::tuple<Face_handle, int, Kernel::FT> Enhanced_constrained_delaunay_triangulation_2::find_minimum_vertex_to_vertex(double squared_tolerance) const
+{
+	return find_minimum_degenerate_edge(squared_tolerance);
+}
+
+// if an edge is a sliver base edge
+bool Enhanced_constrained_delaunay_triangulation_2::is_sliver_base(const Face_handle& face, int i, double squared_tolerance, bool constrained_flag) const
+{
+	// get the height -> based on the edge (face, i)
+	auto squared_height_ = squared_height(face, i);
+
+	// build the possibly sliver base edge
+	Edge possibly_sliver_base_edge;
+	possibly_sliver_base_edge.first = face;
+	possibly_sliver_base_edge.second = i;
+
+
+	// if the base edge's height <= tolerance
+	// (height + epsilon) < tolerance indicates height < tolerance
+	// std::abs(height - tolerance) < epsilon indicates that height can be considered equal to tolerance (=)
+	bool condition_1 = false;
+
+	// if the projection of the opposite vertex is on the constrained base edge
+	bool condition_2 = false;
+
+	// if the constrained_flag is specified as true
+	if (constrained_flag) {
+		condition_1 = ((squared_height_ + snapoly::constants::EPSILON) < squared_tolerance ||
+			std::abs(squared_height_ - squared_tolerance) < snapoly::constants::EPSILON) &&
+			is_constrained(possibly_sliver_base_edge);
+	}
+	else {
+		condition_1 = ((squared_height_ + snapoly::constants::EPSILON) < squared_tolerance ||
+			std::abs(squared_height_ - squared_tolerance) < snapoly::constants::EPSILON);
+	}
+
+	// if the projection of the opposite vertex is on the base edge
+	// if the projection is within the base edge, then squared_distance will be the same as squared_height
+	// otherwise CGAL::squared_distance() calculates the distance between a point and the nearest end point of a segment
+	Segment_2 segment(vertices_of_edge(face, i).first->point(), vertices_of_edge(face, i).second->point());
+	Kernel::FT squared_distance_ = CGAL::squared_distance(face->vertex(i)->point(), segment);
+	auto difference = std::abs(squared_height_ - squared_distance_); // type of return value of std::abs(): double
+	if (difference < snapoly::constants::EPSILON)
+		condition_2 = true;
+
+	return (condition_1 && condition_2);
+}
+
 
 
 

@@ -20,6 +20,19 @@ using namespace geos::operation::polygonize;
 
 int main()
 {
+	//Edge e;
+	Enhanced_triangulation et;
+	et.insert(Kernel::Point_2(1, 1));
+	et.insert(Kernel::Point_2(1, 2));
+	et.insert(Kernel::Point_2(1.5, 1.5));
+	Face_handle face = et.infinite_face();
+	int i = 0;
+	double squared_distance = 0;
+	
+	et.is_sliver_base(face, i, squared_distance, true);
+	
+	// -----------------------------------------------------------------------------------------
+	
 	Snap_rounding_2 sr_2;
 
 	Constraint c1(Kernel::Point_2(3.0, 2.0), Kernel::Point_2(3.0, 4.0));
@@ -146,7 +159,8 @@ int main()
 
 	//Point p;
 
-	//Edge e;
+	
+	
 
 
 	return 0;
