@@ -89,7 +89,7 @@ typedef CGAL::Segment_2<Kernel> Segment_2; // for line segments [p,q] connecting
 /*
 * helpers
 */
-typedef CDT::Point Point; // Point would be conflict with geom::Point, thus we explicitly use Point
+typedef CDT::Point Point; // attention: Point stands for Kernel::Point_2, different from geom::Point
 typedef CDT::Vertex Vertex;
 typedef CDT::Edge Edge; // Edge: pair<Face_handle, int>
 typedef CDT::Edge_circulator Edge_circulator;
@@ -360,6 +360,33 @@ public:
 	* i.e. if it is a sliver triangle then Edge(face, index) indicates the constrained sliver base
 	*/
 	std::pair<bool, int> is_sliver_triangle(const Face_handle& face, double squared_tolerance) const;
+
+
+	/*
+	* return the sliver triangle with the minimum height (within the tolerance) in the triangulation
+	* 
+	* @param squared_tolerance squared tolerance
+	* 
+	* @return Face_handle the minimum sliver triangle
+	* @return int the opposite vertex of the constrained sliver base
+	* i.e. Edge(Face_handle, int) represents the constrained sliver base
+	* if such triangle is not found, this index will be -1 (snapoly::constants::NOT_EXIST)
+	* @return Kernel::FT the minimum height
+	*/
+	std::tuple<Face_handle, int, Kernel::FT> find_minimum_sliver_triangle(double squared_tolerance) const;
+
+
+	/*
+	* for better alignment with concepts
+	*/
+	std::tuple<Face_handle, int, Kernel::FT> find_minimum_vertex_to_boundary(double squared_tolerance) const;
+
+
+	/*
+	* make the edge (f, i) constrained
+	* mark_constraint() is protected, so it can only be accessed within the derived class
+	*/
+	void mark_constrained(Face_handle f, int i);
 };
 
 

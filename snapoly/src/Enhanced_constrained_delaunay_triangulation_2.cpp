@@ -401,6 +401,52 @@ std::pair<bool, int> Enhanced_constrained_delaunay_triangulation_2::is_sliver_tr
 	return std::make_pair(false, 0);
 }
 
+// find the sliver triangle with the minimum height (within the tolerance) in the triangulation
+std::tuple<Face_handle, int, Kernel::FT> Enhanced_constrained_delaunay_triangulation_2::find_minimum_sliver_triangle(double squared_tolerance) const
+{
+	Edge e;
+	e.first = infinite_face();
+	e.second = snapoly::constants::NOT_EXIST; // initialize edge e, DOESNT_EXIST indicates no sliver triangle is found
+
+	Kernel::FT min_squared_height = snapoly::constants::DOUBLE_MAX;
+	Face_handle min_triangle = infinite_face();
+
+	for (auto& face : finite_face_handles()) {
+
+		// find the sliver constrained triangle
+		std::pair<bool, int> is_sliver = is_sliver_triangle(face, squared_tolerance); // pair<bool, int>
+
+		// if a sliver constrained triangle is found
+		if (is_sliver.first) {
+			auto computed_squared_height = squared_height(face, is_sliver.second); // computed_height is positive
+			if ((computed_squared_height + snapoly::constants::EPSILON) < min_squared_height) { // if min_height gets updated, we update face handle and the opposite vertex at the same time
+				min_squared_height = computed_squared_height;
+				e.first = face;
+				e.second = is_sliver.second;
+			}
+		}
+	} // end for: all finite faces in the triangulation
+
+	//cout << "the squared height of the sliver triangle is: " << min_squared_height << '\n';
+
+	return std::make_tuple(e.first, e.second, min_squared_height);
+}
+
+std::tuple<Face_handle, int, Kernel::FT> Enhanced_constrained_delaunay_triangulation_2::find_minimum_vertex_to_boundary(double squared_tolerance) const
+{
+	return find_minimum_sliver_triangle(squared_tolerance);
+}
+
+// mark the edge as constrained
+void Enhanced_constrained_delaunay_triangulation_2::mark_constrained(Face_handle f, int i)
+{
+	Edge edge;
+	edge.first = f;
+	edge.second = i;
+	if (!is_constrained(edge))
+		mark_constraint(f, i); // protected member function from CDT class
+}
+
 
 
 
