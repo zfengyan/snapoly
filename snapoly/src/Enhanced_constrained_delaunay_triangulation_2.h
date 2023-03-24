@@ -342,6 +342,24 @@ public:
 	* and this value will be larger than squared height
 	*/
 	bool is_sliver_base(const Face_handle& face, int i, double squared_tolerance, bool constrained_flag = false) const;
+
+
+	/*
+	* A sliver triangle is a triangle which satisifes the following conditions:
+	* <1> ONLY one constrained sliver base
+	*     the height of the constrained base < tolerance -> constrained sliver base
+	* <2> the other two edges must not be sliver base edges
+	*
+	* @param face a Face_handle
+	* @param squared_tolerance squared tolerance
+	* 
+	* @return:
+	* std::pair<bool, int>
+	* first indicates if it is a sliver triangle - return true if it is otherwise false
+	* second indicates the opposite index of the constrained sliver base
+	* i.e. if it is a sliver triangle then Edge(face, index) indicates the constrained sliver base
+	*/
+	std::pair<bool, int> is_sliver_triangle(const Face_handle& face, double squared_tolerance) const;
 };
 
 

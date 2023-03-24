@@ -321,7 +321,7 @@ std::tuple<Face_handle, int, Kernel::FT> Enhanced_constrained_delaunay_triangula
 	return find_minimum_degenerate_edge(squared_tolerance);
 }
 
-// if an edge is a sliver base edge
+// if an edge is a sliver base edge (or a constrained sliver base edge)
 bool Enhanced_constrained_delaunay_triangulation_2::is_sliver_base(const Face_handle& face, int i, double squared_tolerance, bool constrained_flag) const
 {
 	// get the height -> based on the edge (face, i)
@@ -362,6 +362,43 @@ bool Enhanced_constrained_delaunay_triangulation_2::is_sliver_base(const Face_ha
 		condition_2 = true;
 
 	return (condition_1 && condition_2);
+}
+
+// if a face is a sliver triangle
+std::pair<bool, int> Enhanced_constrained_delaunay_triangulation_2::is_sliver_triangle(const Face_handle& face, double squared_tolerance) const
+{
+	if (is_infinite(face)) // if infinite face
+	{
+		std::cout << "this is an infinite face, a sliver triangle must be a finite face" << '\n';
+		return std::make_pair(false, 0);
+	}
+
+	// ONLY one sliver constrained base
+	// the other two edges must not be sliver base edges (they may be constrained)
+
+	// Edge (face, 0) is the constrained sliver base
+	if (is_sliver_base(face, 0, squared_tolerance, true) &&
+		!is_sliver_base(face, 1, squared_tolerance) &&
+		!is_sliver_base(face, 2, squared_tolerance)) {
+		return std::make_pair(true, 0);
+	}
+
+	// Edge (face, 1) is the constrained sliver base
+	if (is_sliver_base(face, 1, squared_tolerance, true) &&
+		!is_sliver_base(face, 2, squared_tolerance) &&
+		!is_sliver_base(face, 0, squared_tolerance)) {
+		return std::make_pair(true, 1);
+	}
+
+	// Edge (face, 2) is the constrained sliver base
+	if (is_sliver_base(face, 2, squared_tolerance, true) &&
+		!is_sliver_base(face, 0, squared_tolerance) &&
+		!is_sliver_base(face, 1, squared_tolerance)) {
+		return std::make_pair(true, 2);
+	}
+
+	// if the face is not a sliver triangle
+	return std::make_pair(false, 0);
 }
 
 

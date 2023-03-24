@@ -22,14 +22,23 @@ int main()
 {
 	//Edge e;
 	Enhanced_triangulation et;
-	et.insert(Kernel::Point_2(1, 1));
-	et.insert(Kernel::Point_2(1, 2));
-	et.insert(Kernel::Point_2(1.5, 1.5));
-	Face_handle face = et.infinite_face();
-	int i = 0;
-	double squared_distance = 0;
+	et.insert(Kernel::Point_2(2, 1));
+	et.insert(Kernel::Point_2(5, 1));
+	et.insert(Kernel::Point_2(4.0, 1.2));
+	//et.insert_constraint(Kernel::Point_2(2, 1), Kernel::Point_2(5, 1));
+
+	double tolerance = 0.2;
+	double squared_tolerance = tolerance * tolerance;
+
+	for (auto const& face : et.finite_face_handles()) {
+		for (int i = 0; i < 3; ++i) {
+			if (et.is_sliver_base(face, i, squared_tolerance, true))
+				cout << face->vertex(i)->point() << '\n';
+		}
+		cout << et.is_sliver_triangle(face, squared_tolerance).first << '\n';
+	}
 	
-	et.is_sliver_base(face, i, squared_distance, true);
+	
 	
 	// -----------------------------------------------------------------------------------------
 	
