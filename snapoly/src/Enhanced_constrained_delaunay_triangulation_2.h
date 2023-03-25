@@ -81,7 +81,7 @@ typedef CGAL::Triangulation_data_structure_2<Vertex_base_with_info, Face_base_wi
 typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, Tag> CDT; // CDT
 typedef CGAL::Polygon_2<Kernel> Polygon_2; // polygon_2
 typedef CGAL::Polygon_with_holes_2<Kernel> Polygon_with_holes_2; // polygon with holes
-typedef CGAL::Segment_2<Kernel> Segment_2; // for line segments [p,q] connecting two points p,q
+typedef CGAL::Segment_2<Kernel> Segment_2; // for line segments [p,q] connecting two CDTPoints p,q
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
@@ -89,7 +89,7 @@ typedef CGAL::Segment_2<Kernel> Segment_2; // for line segments [p,q] connecting
 /*
 * helpers
 */
-typedef CDT::Point Point; // attention: Point stands for Kernel::Point_2, different from geom::Point
+typedef CDT::Point CDTPoint; // attention: CDTPoint stands for Kernel::Point_2, different from geom::Point
 typedef CDT::Vertex Vertex;
 typedef CDT::Edge Edge; // Edge: pair<Face_handle, int>
 typedef CDT::Edge_circulator Edge_circulator;
@@ -135,11 +135,11 @@ public:
 
 
 	/*
-	* calculate and return the unsigned area of a triangle formed by three points: p, q, r
+	* calculate and return the unsigned area of a triangle formed by three CDTPoints: p, q, r
 	* 
 	* @return Kernel::FT the internal Field Type of CGAL.
 	*/
-	Kernel::FT area(const Point& p, const Point& q, const Point& r) const;
+	Kernel::FT area(const CDTPoint& p, const CDTPoint& q, const CDTPoint& r) const;
 
 
 	/*
@@ -167,39 +167,39 @@ public:
 	/*
 	* get the centroid of a face
 	* pa, pb, pc are three vertices of a face
-	* yields a new point
+	* yields a new CDTPoint
 	* 
-	* @return: Point
+	* @return: CDTPoint
 	*/
-	Point face_centroid(const Point& pa, const Point& pb, const Point& pc) const;
+	CDTPoint face_centroid(const CDTPoint& pa, const CDTPoint& pb, const CDTPoint& pc) const;
 
 
 	/*
 	* get the centroid of a face
 	* va, vb, vc are three vertex handles of a face
-	* yields a new point
+	* yields a new CDTPoint
 	* 
-	* @return: Point
+	* @return: CDTPoint
 	*/
-	Point face_centroid(const Vertex_handle& va, const Vertex_handle& vb, const Vertex_handle& vc) const;
+	CDTPoint face_centroid(const Vertex_handle& va, const Vertex_handle& vb, const Vertex_handle& vc) const;
 
 
 	/*
 	* get the centroid of a face
-	* yields a new point
+	* yields a new CDTPoint
 	* 
-	* @return: Point
+	* @return: CDTPoint
 	*/
-	Point face_centroid(const Face_handle& face) const;
+	CDTPoint face_centroid(const Face_handle& face) const;
 
 
 	/*
-	* get the centroid(midpoint) of an edge
-	* yields a new point
+	* get the centroid(midCDTPoint) of an edge
+	* yields a new CDTPoint
 	* 
-	* @return: Point
+	* @return: CDTPoint
 	*/
-	Point edge_centroid(const Edge& edge) const;
+	CDTPoint edge_centroid(const Edge& edge) const;
 
 
 	/*
@@ -231,7 +231,7 @@ public:
 	* for example, in snap rounding, we want to keep the constrained incident vertices of two close vertices respectively
 	* suppose targetVertex and omitVertex are two close vertices, when we find constrained incident vertices of targetVertex
 	* if the edge between targetVertex and omitVertex is constrained, then omitVertex will also be added into the vec
-	* later when we re-introduce the constraints, there will be a new constraint between the midpoint and the omitVertex
+	* later when we re-introduce the constraints, there will be a new constraint between the midCDTPoint and the omitVertex
 	* then they become close vertices again
 	* Therefore we need to omit that vertex when performing snap rounding on close vertices.
 	* 
@@ -239,7 +239,7 @@ public:
 	*/
 	void get_constrained_incident_vertices(
 		const Vertex_handle& targetVh, 
-		vector<Point>& constrained_incident_vertices_vec, 
+		vector<CDTPoint>& constrained_incident_vertices_vec, 
 		Vertex_handle omitVh = Vertex_handle()) const;
 
 
@@ -248,9 +248,9 @@ public:
 	* va, vb are the two vertices of edge A
 	* vc, vd are the two vertices of edge B
 	* if only:
-	* va->point() == vc->point() && vb->point() == vd->point()
+	* va->CDTPoint() == vc->CDTPoint() && vb->CDTPoint() == vd->CDTPoint()
 	* or
-	* va->point() == vd->point() && vb->point() == vc->point()
+	* va->CDTPoint() == vd->CDTPoint() && vb->CDTPoint() == vc->CDTPoint()
 	* the two edges are the same
 	* 
 	* @return bool return true if two edges are in the same location otherwise false
@@ -334,11 +334,11 @@ public:
 	* ATTENTION
 	* Note that the projection of the opposite vertex onto the constrained base might not be within it
 	* thus this type of triangle should not be snapped -
-	* - currently by comparing the height and CGAL::squared_distance(Point_2, Segment_2).
+	* - currently by comparing the height and CGAL::squared_distance(CDTPoint_2, Segment_2).
 	* if the projection of the opposite vertex is within the segnment
-	* then std::abs(height - CGAL::squared_distance(Point_2, Segment_2)) < epsilon
-	* if not, the CGAL::squared_distance(Point_2, Segment_2) would be the squared distance
-	* from the Point_2 and the closest point of Segment_2, which should be one of its two ends
+	* then std::abs(height - CGAL::squared_distance(CDTPoint_2, Segment_2)) < epsilon
+	* if not, the CGAL::squared_distance(CDTPoint_2, Segment_2) would be the squared distance
+	* from the CDTPoint_2 and the closest CDTPoint of Segment_2, which should be one of its two ends
 	* and this value will be larger than squared height
 	*/
 	bool is_sliver_base(const Face_handle& face, int i, double squared_tolerance, bool constrained_flag = false) const;
@@ -399,7 +399,7 @@ namespace snapoly {
 	namespace printer {
 
 		/*
-		* print out a point in the form of: (x, y)
+		* print out a CDTPoint in the form of: (x, y)
 		*/
 		void print(const Vertex_handle& v);
 

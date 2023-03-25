@@ -3,9 +3,11 @@
 
 #include "Enhanced_constrained_delaunay_triangulation_2.h"
 
+typedef CDT::Point Point;
+
 // Constraint
 struct Constraint {
-	Kernel::Point_2 p0;
+	CDTPoint p0;
 	Kernel::Point_2 p1;
 	string id; // for common boundary, there will be two constraints (same location) with different id
 

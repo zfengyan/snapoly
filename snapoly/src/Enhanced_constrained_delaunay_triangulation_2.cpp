@@ -45,7 +45,7 @@ Kernel::FT Enhanced_constrained_delaunay_triangulation_2::squared_length(const E
 }
 
 Kernel::FT Enhanced_constrained_delaunay_triangulation_2::area(
-	const Point& p, const Point& q, const Point& r) const
+	const CDTPoint& p, const CDTPoint& q, const CDTPoint& r) const
 {
 	Kernel::FT signed_area = CGAL::area(p, q, r);
 	return (signed_area > snapoly::constants::EPSILON ? signed_area : -signed_area); // return the positive value
@@ -58,9 +58,9 @@ Kernel::FT Enhanced_constrained_delaunay_triangulation_2::area(const Face_handle
 		cout << "std::numeric_limits<double>::max() will be returned. \n";
 		return snapoly::constants::DOUBLE_MAX;
 	}
-	Point pa = face->vertex(0)->point();
-	Point pb = face->vertex(1)->point();
-	Point pc = face->vertex(2)->point();
+	CDTPoint pa = face->vertex(0)->point();
+	CDTPoint pb = face->vertex(1)->point();
+	CDTPoint pc = face->vertex(2)->point();
 
 	Kernel::FT signed_area = CGAL::area(pa, pb, pc);
 	return (signed_area > snapoly::constants::EPSILON ? signed_area : -signed_area); // return the positive value
@@ -79,23 +79,23 @@ Kernel::FT Enhanced_constrained_delaunay_triangulation_2::squared_height(const F
 
 
 // face centroids
-Point Enhanced_constrained_delaunay_triangulation_2::face_centroid(
-	const Point& pa, const Point& pb, const Point& pc) const
+CDTPoint Enhanced_constrained_delaunay_triangulation_2::face_centroid(
+	const CDTPoint& pa, const CDTPoint& pb, const CDTPoint& pc) const
 {
 	return CGAL::centroid(pa, pb, pc);
 }
 
-Point Enhanced_constrained_delaunay_triangulation_2::face_centroid(const Vertex_handle& va, const Vertex_handle& vb, const Vertex_handle& vc) const
+CDTPoint Enhanced_constrained_delaunay_triangulation_2::face_centroid(const Vertex_handle& va, const Vertex_handle& vb, const Vertex_handle& vc) const
 {
 	return CGAL::centroid(va->point(), vb->point(), vc->point());
 }
 
-Point Enhanced_constrained_delaunay_triangulation_2::face_centroid(const Face_handle& face) const
+CDTPoint Enhanced_constrained_delaunay_triangulation_2::face_centroid(const Face_handle& face) const
 {
 	if (is_infinite(face)) // if infinite face
 	{
 		std::cout << "the centroid of a face can not be calculated if the face is infinite"
-			<< "an infinite point will be returned" << '\n';
+			<< "an infinite CDTPoint will be returned" << '\n';
 		return infinite_vertex()->point();
 	}
 	Vertex_handle va = face->vertex(0);
@@ -105,7 +105,7 @@ Point Enhanced_constrained_delaunay_triangulation_2::face_centroid(const Face_ha
 }
 
 // edge centroid
-Point Enhanced_constrained_delaunay_triangulation_2::edge_centroid(const Edge& edge) const
+CDTPoint Enhanced_constrained_delaunay_triangulation_2::edge_centroid(const Edge& edge) const
 {
 	// get two vertices of this edge
 	Face_handle incident_face = edge.first;
@@ -154,7 +154,7 @@ std::pair<Vertex_handle, Vertex_handle> Enhanced_constrained_delaunay_triangulat
 
 // get constrained incident vertices of a certain vertex excluding an omit vertex
 void Enhanced_constrained_delaunay_triangulation_2::get_constrained_incident_vertices(
-	const Vertex_handle& targetVh, vector<Point>& constrained_incident_vertices_vec, Vertex_handle omitVh) const
+	const Vertex_handle& targetVh, vector<CDTPoint>& constrained_incident_vertices_vec, Vertex_handle omitVh) const
 {
 	if (targetVh == omitVh)
 	{
@@ -204,8 +204,8 @@ bool Enhanced_constrained_delaunay_triangulation_2::is_same_edge_by_location(con
 	Vertex_handle vc = vertices_of_edge(edgeB).first;
 	Vertex_handle vd = vertices_of_edge(edgeB).second;
 
-	// operator== of Vertex handle only compares the underlying pointers, not coordinates
-	// if comparison of coordinates is required, operator== of Point should be used
+	// operator== of Vertex handle only compares the underlying CDTPointers, not coordinates
+	// if comparison of coordinates is required, operator== of CDTPoint should be used
 	return (
 		((va->point() == vc->point()) && (vb->point() == vd->point())) ||
 		((va->point() == vd->point()) && (vb->point() == vc->point()))
@@ -240,7 +240,7 @@ Edge Enhanced_constrained_delaunay_triangulation_2::common_edge(const Face_handl
 	// find common edge
 	for (auto const& ea : eA) {
 		for (auto const& eb : eB) {
-			if (is_same_edge_by_location(ea, eb)) { // comparing the underlying Point
+			if (is_same_edge_by_location(ea, eb)) { // comparing the underlying CDTPoint
 				return ea;
 			}
 		}
@@ -354,7 +354,7 @@ bool Enhanced_constrained_delaunay_triangulation_2::is_sliver_base(const Face_ha
 
 	// if the projection of the opposite vertex is on the base edge
 	// if the projection is within the base edge, then squared_distance will be the same as squared_height
-	// otherwise CGAL::squared_distance() calculates the distance between a point and the nearest end point of a segment
+	// otherwise CGAL::squared_distance() calculates the distance between a CDTPoint and the nearest end CDTPoint of a segment
 	Segment_2 segment(vertices_of_edge(face, i).first->point(), vertices_of_edge(face, i).second->point());
 	Kernel::FT squared_distance_ = CGAL::squared_distance(face->vertex(i)->point(), segment);
 	auto difference = std::abs(squared_height_ - squared_distance_); // type of return value of std::abs(): double
