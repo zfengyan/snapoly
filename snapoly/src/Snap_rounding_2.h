@@ -88,8 +88,8 @@ public:
 	const Polygon_2::Vertex_const_iterator exterior_end() const { return m_outerRing.vertices_end(); }
 
 	// id
-	string& getID() { return m_id; }
-	const string& getID() const { return m_id; }
+	string& id() { return m_id; }
+	const string& id() const { return m_id; }
 
 	// predicate
 	bool has_holes() const { return (m_innerRings.size() != 0); }
@@ -114,12 +114,108 @@ protected:
 // Snap_rounding_2 class
 // for performing snap rounding
 class Snap_rounding_2 {
+public:
 
-	list<Constraint> constraintsWithInfo;
+	// initialize according to the declaraion: m_tolerance(0.3),
+	Snap_rounding_2():
+		m_tolerance(0.3),
+		m_squared_tolerance(0.09),
+		m_constraintsWithInfo(),
+		m_polygons(),
+		et()
+	{
+		cout << "default snap rounding tolerance is: " << m_tolerance << '\n';
+	}
 
-	Snap_rounding_2()
-		: constraintsWithInfo()
-	{}
+
+	/*
+	* set tolerance
+	*/
+	void set_tolerance(double tolerance_param);
+
+	
+	/*
+	* build the constrained (Delaunay) triangulation based on the polygons provided
+	* polygons: a std::vector to hold all input polygons(assume to be valid)
+	*/
+	void insert_polygons_to_triangulation();
+
+	
+	/*
+	* assume a startingFace is found
+	* starting from the startingFace, using a BFS search to tag all the faces of the polygon
+	* tagg the triangles until a constrained edge is encountered, which means the edge could be
+	* a. the outer boundary of the polygon
+	* b. the inner boundary of the polygon (hole(s))
+	*
+	* also tag the constraints, store the constraints with info to a vector
+	*
+	* when using emplace_back(), extra care needs to be taken
+	* for example, constructed elements may not be in the same order when they were added into the vector
+	*
+	* @param:
+	* @param - startingFace: where we start the tagging process
+	* @param - refPgn: the reference polygon
+	*/
+	void add_tag_to_one_polygon(Face_handle& startingFace, const CDTPolygon& refPgn);
+
+
+	/*
+	* add tag to the triangulation
+	* input: polygons with possible hole(s) and attributes attached (type: CDTPolygon)
+	* output:
+	* (1) a triangulation with face info (which polygon it belongs to)
+	* (2) and constraints with tags stored in a vector
+	*
+	* Note that when tagging the triangles, we need to consider the polygon with hole(s):
+	* ONLY if a point lies inside the outer boundary of a polygon but outside all of the holes
+	* will this point is considered as "inside" the polygon with hole(s)
+	* For example, if a point is inside the exterior ring but on the boundary of the interiors (holes)
+	* that is not considered as "inside"? (or should we?)
+	*
+	* the precision is 1e-15 -> the highest precision for double type
+	* since we are not using exact constructions, thus the calculated centroid has the precision of double
+	*/
+	void add_tag_to_triangulation();
+
+
+	/*
+	* snap close vertex to vertex
+	* update constraintsWithInfo first and then modify the triangulation
+	* @param: edgeOfVertexToVertex - indicates the edge which connects two close vertices
+	*/
+	void snap_vertex_to_vertex(Edge& edgeOfVertexToVertex);
+
+
+	/*
+	* snap close vertex to boundary
+	* update constraintsWithInfo first and then modify the triangulation
+	* @param:
+	* sliverFace: a sliver triangle which has one constrained base
+	* oppositeVertexIndex: Edge(sliverFace, oppositeVertexIndex) indicates the constrained base
+	*/
+	void snap_vertex_to_boundary(Face_handle& sliverFace, int capturingVertexIndex);
+
+
+	/*
+	* snap from the minimum, maybe two close vertices or vertex - edge
+	* depends on the length -> each time snap the minimum
+	*/
+	void dynamic_snap();
+
+
+	/*
+	* get polygons vector
+	*/
+	vector<CDTPolygon>& polygons() { return m_polygons; }
+	const vector<CDTPolygon>& polygons() const { return m_polygons; }
+
+protected:
+	double m_tolerance; // snap rounding tolerance
+	double m_squared_tolerance; // squared tolerance
+	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
+	vector<CDTPolygon> m_polygons; // store the OGRPolygons
+	Enhanced_triangulation et; // the enhanced constrained Delaunay triangulation 
 
 };
 

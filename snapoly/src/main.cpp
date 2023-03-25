@@ -44,6 +44,12 @@ int main()
 
 	auto find = et.find_minimum_sliver_triangle(squared_tolerance);
 	cout << std::get<2>(find) << '\n';
+
+
+	Snap_rounding_2 sr;
+	const char* input_file = R"(D:\snapoly\data\ab.gpkg)"; // Andorra_buildings_1
+	snapoly::io::add_polygons_from_input_file(input_file, sr.polygons());
+
 	
 	
 	
@@ -63,7 +69,7 @@ int main()
 
 	Constraint c9(Kernel::Point_2(5.0, 2.0), Kernel::Point_2(6.0, 1.0));
 
-	sr_2.constraintsWithInfo.emplace_back(c1);
+	/*sr_2.constraintsWithInfo.emplace_back(c1);
 	sr_2.constraintsWithInfo.emplace_back(c2);
 	sr_2.constraintsWithInfo.emplace_back(c3);
 	sr_2.constraintsWithInfo.emplace_back(c4);
@@ -71,7 +77,7 @@ int main()
 	sr_2.constraintsWithInfo.emplace_back(c6);
 	sr_2.constraintsWithInfo.emplace_back(c7);
 	sr_2.constraintsWithInfo.emplace_back(c8);
-	sr_2.constraintsWithInfo.emplace_back(c9);
+	sr_2.constraintsWithInfo.emplace_back(c9);*/
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -83,11 +89,11 @@ int main()
 	
 	vector<vector<Coordinate>> coordinates;
 
-	for (auto const& cons : sr_2.constraintsWithInfo) {
+	/*for (auto const& cons : sr_2.constraintsWithInfo) {
 		coordinates.emplace_back();
 		coordinates.back().emplace_back(Coordinate(cons.p0.x(), cons.p0.y()));
 		coordinates.back().emplace_back(Coordinate(cons.p1.x(), cons.p1.y()));
-	}
+	}*/
 
 	// coordinate sequences
 	std::size_t numOfVerticesOfLineString = 2;
