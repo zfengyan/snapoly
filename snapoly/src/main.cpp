@@ -27,6 +27,9 @@ int main()
 	et.insert(Kernel::Point_2(4.0, 1.2));
 	et.insert_constraint(Kernel::Point_2(2, 1), Kernel::Point_2(5, 1));
 
+	//cout << Kernel::Point_2(2, 1) << '\n';
+	
+
 	double tolerance = 0.2;
 	double squared_tolerance = tolerance * tolerance;
 
@@ -36,6 +39,7 @@ int main()
 				cout << face->vertex(i)->point() << '\n';
 		}
 		cout << et.is_sliver_triangle(face, squared_tolerance).first << '\n';
+		snapoly::printer::print(face);
 	}
 
 	auto find = et.find_minimum_sliver_triangle(squared_tolerance);

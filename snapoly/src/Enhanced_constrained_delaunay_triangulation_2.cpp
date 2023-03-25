@@ -446,12 +446,31 @@ void Enhanced_constrained_delaunay_triangulation_2::mark_constrained(Face_handle
 	if (!is_constrained(edge))
 		mark_constraint(f, i); // protected member function from CDT class
 }
-
-
-
-
-
-
-
-
 // ====================================================================================================================================================================
+
+
+
+void snapoly::printer::print(const Vertex_handle& v)
+{
+	cout << "(" << v->point().x() << ", " << v->point().y() << ")";
+}
+
+void snapoly::printer::print(const Edge& edge)
+{
+	Face_handle face = edge.first;
+	int opposite_vertex = edge.second;
+	int cw = face->cw(opposite_vertex);
+	int ccw = face->ccw(opposite_vertex);
+	cout << "(" << face->vertex(ccw)->point().x() << ", " << face->vertex(ccw)->point().y() << ")"
+		<< " -- " << "(" << face->vertex(cw)->point().x() << ", " << face->vertex(cw)->point().y() << ")" << '\n';
+}
+
+void snapoly::printer::print(const Face_handle& face)
+{
+	cout << '\n';
+	cout << "-- Face handle: " << '\n';
+	cout << "0: " << face->vertex(0)->point() << '\n';
+	cout << "1: " << face->vertex(1)->point() << '\n';
+	cout << "2: " << face->vertex(2)->point() << '\n';
+	cout << '\n';
+}

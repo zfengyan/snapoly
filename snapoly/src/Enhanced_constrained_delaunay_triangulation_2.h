@@ -387,10 +387,35 @@ public:
 	* mark_constraint() is protected, so it can only be accessed within the derived class
 	*/
 	void mark_constrained(Face_handle f, int i);
+
+
 };
 
 
 typedef Enhanced_constrained_delaunay_triangulation_2 Enhanced_triangulation;
+
+
+namespace snapoly {
+	namespace printer {
+
+		/*
+		* print out a point in the form of: (x, y)
+		*/
+		void print(const Vertex_handle& v);
+
+
+		/*
+		* print out an Edge(Face_handle, int)
+		*/
+		void print(const Edge& edge);
+
+
+		/*
+		* print out an Face_handle
+		*/
+		void print(const Face_handle& face);
+	}
+}
 
 
 #endif // !ENHANCED_CONSTRAINED_DELAUNAY_TRINGULATION_2_H
