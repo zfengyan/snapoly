@@ -317,6 +317,10 @@ void Snap_rounding_2::snap_rounding()
 	cout << '\n';
 	cout << "snap rounding... \n";
 
+	//Debug
+	int count = 0;
+	//Debug
+
 	//-------------------------------------------------------------------------------------------------------------------------
 	while (true) {
 
@@ -368,6 +372,11 @@ void Snap_rounding_2::snap_rounding()
 			}
 
 		}
+
+		//Debug
+		++count;
+		if (count == 2)break;
+		//Debug
 
 	} // end while: until no cases are found under given tolerance
 

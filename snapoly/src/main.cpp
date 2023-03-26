@@ -26,14 +26,14 @@ int main()
 	sr.set_tolerance(1.50659e-05); // 9.50158e-06
 
 	sr.snap_rounding();
-	
+
 	const char* output_file = R"(D:\snapoly\data\missingcon.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(output_file, sr.constraintsWithInfo());
 
 	cout << "file saved at: " << output_file << '\n';
-	
+
 	// -----------------------------------------------------------------------------------------
-	
+
 	const char* res_file = R"(D:\snapoly\data\missingres.gpkg)"; // Andorra_buildings_1
 
 	vector<CDTPolygon> resPolygonsVec;
@@ -43,7 +43,6 @@ int main()
 
 	const char* tri_file = R"(D:\snapoly\data\missingtri.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(tri_file, sr.triangulation());
-	// -----------------------------------------------------------------------------------------
 	
 
 	return 0;
