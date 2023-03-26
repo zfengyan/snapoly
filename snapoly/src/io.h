@@ -8,6 +8,13 @@ namespace snapoly {
 
 	namespace io {
 
+		// Attention
+		// geos namespace may contain same class name like Point
+		// which will probably be conflict with CDT typedefs
+		using namespace geos::geom;
+		using namespace geos::operation::polygonize;
+		using GEOSPolygon = geos::geom::Polygon; // differentiate from CDTPolygon
+
 
 		/*
 		* add OGRPolygon to polygons
@@ -43,6 +50,23 @@ namespace snapoly {
 		* export to GPKG file
 		*/
 		void export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo);
+
+
+		/*
+		* using constraintsWithInfo to build output polygons
+		* the output polygons will be stored into outputPolygonsVec
+		*/
+		void build_polygons_from_constraints(
+			list<Constraint>& constraintsWithInfo, 
+			vector<CDTPolygon>& resPolygonsVec);
+
+
+		/*
+		* output resPolygons directly
+		* polygons: store the 2D polygon with hole(s) (type: Polygon)
+		* currently attributes only contain id (std::string)
+		*/
+		void export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec);
 
 
 	} // namespace io

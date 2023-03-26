@@ -12,7 +12,7 @@ using std::endl;
 using std::string;
 using std::vector;
 using std::queue;
-using std::map;
+using std::unordered_map;
 using std::list;
 
 // constants

@@ -311,3 +311,307 @@ void snapoly::io::export_to_gpkg(const char* filename, const list<Constraint>& c
 	GDALDestroyDriverManager();
 
 }
+
+// build output polygons from constraints
+void snapoly::io::build_polygons_from_constraints(
+	list<Constraint>& constraintsWithInfo, 
+	vector<CDTPolygon>& resPolygonsVec)
+{
+	// build an unordered_map and use the id of constraints as key, the corresponding constraints as value
+	// i.e.constraintsMap[id] = constraints having the id "id"
+	unordered_map<string, vector<Constraint>> constraintsMap;
+
+	// populate the map
+	for (auto const& constraint : constraintsWithInfo) {
+		string id = constraint.idCollection[1];
+		constraintsMap[id].push_back(constraint);
+	}
+
+	// build CoordinateSequence for constraints with the same id
+	// Coordinate: (x, y), for each constraint two points -> two Coordinates objects
+	for (auto& element : constraintsMap) {
+
+		vector<vector<Coordinate>> coordinates;
+
+		for (auto const& cons : element.second) { // element.second: vector<Constraint> -> store the constraints with same id
+			coordinates.emplace_back();
+			coordinates.back().emplace_back(Coordinate(cons.p0.x(), cons.p0.y()));
+			coordinates.back().emplace_back(Coordinate(cons.p1.x(), cons.p1.y()));
+		}
+
+		// each LineString represents for one constraint
+		std::size_t numOfVerticesOfLineString = 2;
+
+		// createLineString accepts pointer of CoordinateSequence
+		// the ownership of CoordinateSequence object will be assumed by global_factory->createLineString()
+		// thus we don't need to free the memory manually
+		vector<CoordinateSequence*> coordinateSequences;
+
+		for (int i = 0; i < coordinates.size(); ++i) {
+			CoordinateSequence* c = new CoordinateArraySequence(numOfVerticesOfLineString, 2);
+			c->setPoints(coordinates[i]);
+			coordinateSequences.push_back(c); // make a copy of the pointer
+		}
+
+		// create and store the line strings
+		GeometryFactory::Ptr global_factory = GeometryFactory::create(); // unique_ptr, don't need to delete manually
+
+		vector<Geometry*> geoms; //= new vector<Geometry*>; // need to delete later
+
+		for (int i = 0; i < coordinateSequences.size(); ++i) {
+			LineString* ls = global_factory->createLineString(coordinateSequences[i]); // takes the ownership of cl
+			geoms.push_back(ls); // shallow copy, pointing to the same memory
+		}
+
+		Polygonizer pgnizer; // one ognizer for a set of constraints having same id
+		pgnizer.add(&geoms);
+
+		/*Ownership of vector is transferred to caller, subsequent
+		* calls will return NULL.
+		* @return a collection of Polygons*/
+		std::vector<std::unique_ptr<GEOSPolygon>> polys = pgnizer.getPolygons();
+		cout << "polygon vector size: " << polys.size() << '\t';
+		cout << "has dangles? " << pgnizer.hasDangles() << '\n';
+
+		// check
+		if (polys.size() != 1 || pgnizer.hasDangles())
+			cout << element.first << '\n';
+		// check
+
+		// build resPolygon
+		CDTPolygon resPolygon;
+		resPolygon.id() = element.first;
+		for (unsigned int i = 0; i < polys.size(); i++) {
+			//cout << "polygon: " << polys[i]->toString() << '\n';
+			//cout << "area: " << polys[i]->getArea() << '\n';
+
+
+			// Print the coordinates
+
+			//exterior ring
+			std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[i]->getExteriorRing()->getCoordinates();
+			std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
+
+			for (std::size_t m = 0; m < numOfExteriorPoints; ++m) {
+				const Coordinate& coord = exteriorCoordSeq->getAt(m);
+				resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
+				//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+			} // add exterior points
+
+			// interior ring(s)
+			//cout << "number of inner rings: " << polys[i]->getNumInteriorRing() << '\n';
+			for (std::size_t m = 0; m < polys[i]->getNumInteriorRing(); ++m) {
+				std::unique_ptr<CoordinateSequence> holeCoordSeq = polys[i]->getInteriorRingN(m)->getCoordinates();
+
+				// represent a hole
+				Polygon_2 hole;
+
+				// Print the coordinates of the i-th hole
+				std::cout << "Hole " << i << ":" << std::endl;
+				for (std::size_t j = 0; j < holeCoordSeq->getSize()-1; ++j) {
+					const Coordinate& coord = holeCoordSeq->getAt(j);
+					hole.push_back(CDTPoint(coord.x, coord.y));
+					//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+				}
+
+				// add the hole to the CDTPolygon
+				resPolygon.holes().push_back(hole);
+			}
+		} // end for: all constraints with same id
+
+
+		// clean up
+		for (unsigned int i = 0; i < geoms.size(); i++) {
+			delete geoms[i];
+		}
+
+		//add the resPolygon to the vector
+		resPolygonsVec.push_back(resPolygon);
+
+	} // end for: constraintsMap
+}
+
+// export the res polygons to gpkg file
+void snapoly::io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec)
+{
+	GDALAllRegister();
+
+	// get driver
+	const char* out_driver_name = "GPKG"; // output as .gpkg file
+	GDALDriver* out_driver = GetGDALDriverManager()->GetDriverByName(out_driver_name);
+	if (out_driver == nullptr) {
+		std::cerr << "Error: OGR driver not found\n";
+		return;
+	}
+
+	/* if file has already existed, overwrite * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	bool file_exist = std::filesystem::exists(std::filesystem::path(filename));
+	if (file_exist) {
+		std::cout << "file " << filename << " has already existed, overwriting ...\n";
+		if (out_driver->Delete(filename) != OGRERR_NONE) {
+			std::cerr << "Error: couldn't overwrite file\n";
+			return;
+		}
+	}
+	else std::cout << "Writing " << out_driver_name << " file " << filename << "...\n";
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+	// get datasource
+	const char* out_name = filename;
+	GDALDataset* out_dataset = out_driver->Create(out_name, 0, 0, 0, GDT_Unknown, nullptr);
+	if (out_dataset == nullptr) {
+		std::cerr << "Error: couldn't create file: " << out_name << '\n';
+		return;
+	}
+
+	// add faces ------------------------------------------------------------------------------------------------
+	std::cout << "-- output gpkg, write polygons" << '\n';
+	// get layer for polygons
+	OGRLayer* out_layer_polygons = out_dataset->CreateLayer("polygons");
+	if (out_layer_polygons == nullptr) {
+		std::cerr << "Error: couldn't create layer - polygons." << '\n';
+		return;
+	}
+	// field for layer - polygons
+	OGRFieldDefn out_field_polygons("id", OFTString);
+	out_field_polygons.SetWidth(32);
+	if (out_layer_polygons->CreateField(&out_field_polygons) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
+		return;
+	}
+
+	// add faces - traverse all polygons
+	for (auto const& pgn : resPolygonsVec) { // must use reference here: auto const& or Face_handle&
+
+		// - create local feature for each triangle face and set attribute (if any)
+		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_polygons->GetLayerDefn());
+		ogr_feature->SetField("id", pgn.id().c_str()); // set attribute
+
+		// - create local geometry object
+		OGRPolygon* ogr_polygon = new OGRPolygon; // using new keyword - need to be deleted by using `delete` later
+
+		// add exterior ring
+		OGRLinearRing* ogr_exterior_ring = new OGRLinearRing;
+		for (auto iter = pgn.outer_boundary().vertices_begin(); iter != pgn.outer_boundary().vertices_end(); ++iter) { // add points of exterior ring
+			ogr_exterior_ring->addPoint(CGAL::to_double(iter->x()), CGAL::to_double(iter->y()));
+		}ogr_exterior_ring->closeRings(); // ogr ring must be closed
+		ogr_polygon->addRingDirectly(ogr_exterior_ring); // assumes ownership, no need to use 'delete' key word on the created (OGR) ring
+
+		// add interior rings if any
+		if (pgn.has_holes()) {
+			for (auto const& hole : pgn.holes()) { // add each interior ring (hole)				
+				OGRLinearRing* ogr_interior_ring = new OGRLinearRing; // for each hole, there must be a corresponding OGRLinearRing
+				for (auto iter = hole.vertices_begin(); iter != hole.vertices_end(); ++iter) {
+					ogr_interior_ring->addPoint(CGAL::to_double(iter->x()), CGAL::to_double(iter->y()));
+				}ogr_interior_ring->closeRings();
+				ogr_polygon->addRingDirectly(ogr_interior_ring);
+			}
+		}
+
+		// - set geometry
+		ogr_feature->SetGeometryDirectly(ogr_polygon); // assumes ownership, no need to use 'delete' key word on the created (OGR) polygon
+
+		// - create feature in the file
+		if (out_layer_polygons->CreateFeature(ogr_feature) != OGRERR_NONE) {
+			std::cout << "Error: couldn't create feature." << '\n';
+			return;
+		}
+
+		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+
+	} // end for: polygons
+	// add faces ------------------------------------------------------------------------------------------------
+	
+	
+	
+	// add vertices ------------------------------------------------------------------------------------------------------
+	std::cout << "-- output gpkg, write polygon vertices" << '\n';
+	// get layer for vertices
+	OGRLayer* out_layer_vertices = out_dataset->CreateLayer("vertices");
+	if (out_layer_vertices == nullptr) {
+		std::cerr << "Error: couldn't create layer - vertices." << '\n';
+		return;
+	}
+
+	// field for layer vertices - point type
+	OGRFieldDefn out_field_vertices_type("type", OFTString);
+	out_field_vertices_type.SetWidth(32);
+	if (out_layer_vertices->CreateField(&out_field_vertices_type) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer vertices type" << '\n';
+		return;
+	}
+
+	// field for layer vertices - point x coordinates
+	OGRFieldDefn out_field_vertices_x("X", OFTReal);
+	out_field_vertices_x.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
+	if (out_layer_vertices->CreateField(&out_field_vertices_x) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
+		return;
+	}
+
+	// field for layer vertices - point y coordinates
+	OGRFieldDefn out_field_vertices_y("Y", OFTReal);
+	out_field_vertices_y.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
+	if (out_layer_vertices->CreateField(&out_field_vertices_y) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
+		return;
+	}
+
+	// add vertices
+	for (auto const& pgn : resPolygonsVec) {
+
+		// add points of the exterior ring
+		for (auto iter = pgn.outer_boundary().vertices_begin(); iter != pgn.outer_boundary().vertices_end(); ++iter) { // add points of exterior ring
+			OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn()); // - create local feature and set attribute (if any)
+			ogr_feature->SetField("type", "point 2D"); // set attribute
+			ogr_feature->SetField("X", CGAL::to_double(iter->x())); // set attribute
+			ogr_feature->SetField("Y", CGAL::to_double(iter->y())); // set attribute
+
+			OGRPoint ogr_pt; // create local geometry object
+			ogr_pt.setX(CGAL::to_double(iter->x()));
+			ogr_pt.setY(CGAL::to_double(iter->y()));
+			ogr_feature->SetGeometry(&ogr_pt); // set geometry
+
+			// - create feature in the file
+			if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
+				std::cout << "Error: couldn't create feature." << '\n';
+				return;
+			}
+			OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+		}
+
+		// add points of the interior ring
+		if (pgn.has_holes()) {
+			for (auto const& hole : pgn.holes()) {
+				for (auto iter = hole.vertices_begin(); iter != hole.vertices_end(); ++iter) {
+					OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn()); // - create local feature and set attribute (if any)
+					ogr_feature->SetField("type", "point 2D"); // set attribute
+					ogr_feature->SetField("X", CGAL::to_double(iter->x())); // set attribute
+					ogr_feature->SetField("Y", CGAL::to_double(iter->y())); // set attribute
+
+					OGRPoint ogr_pt; // create local geometry object
+					ogr_pt.setX(CGAL::to_double(iter->x()));
+					ogr_pt.setY(CGAL::to_double(iter->y()));
+					ogr_feature->SetGeometry(&ogr_pt); // set geometry
+
+					// - create feature in the file
+					if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
+						std::cout << "Error: couldn't create feature." << '\n';
+						return;
+					}
+					OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+				}
+			}
+		}
+
+	}
+	// add vertices ------------------------------------------------------------------------------------------------------
+
+	// close dataset
+	GDALClose(out_dataset);
+
+	// clean up
+	GDALDestroyDriverManager();
+
+}
+
