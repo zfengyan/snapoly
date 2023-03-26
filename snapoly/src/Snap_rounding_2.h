@@ -135,7 +135,7 @@ public:
 		m_squared_tolerance(0.09),
 		m_constraintsWithInfo(),
 		m_polygons(),
-		et()
+		m_et()
 	{
 		cout << "default snap rounding tolerance is: " << m_tolerance << '\n';
 	}
@@ -230,12 +230,19 @@ public:
 	list<Constraint>& constraintsWithInfo() { return m_constraintsWithInfo; }
 	const list<Constraint>& constraintsWithInfo() const { return m_constraintsWithInfo; }
 
+
+	/*
+	* get the triangulation
+	*/
+	Enhanced_triangulation& triangulation() { return m_et; }
+	const Enhanced_triangulation& triangulation() const { return m_et; }
+
 protected:
 	double m_tolerance; // snap rounding tolerance
 	double m_squared_tolerance; // squared tolerance
 	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
 	vector<CDTPolygon> m_polygons; // store the OGRPolygons
-	Enhanced_triangulation et; // the enhanced constrained Delaunay triangulation 
+	Enhanced_triangulation m_et; // the enhanced constrained Delaunay triangulation 
 
 };
 

@@ -615,3 +615,246 @@ void snapoly::io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPo
 
 }
 
+// export the triangulation to gpkg file
+void snapoly::io::export_to_gpkg(const char* filename, CDT& cdt)
+{
+	GDALAllRegister();
+
+
+	// get driver
+	const char* out_driver_name = "GPKG"; // output as .gpkg file
+	GDALDriver* out_driver = GetGDALDriverManager()->GetDriverByName(out_driver_name);
+	if (out_driver == nullptr) {
+		std::cerr << "Error: OGR driver not found\n";
+		return;
+	}
+
+
+	/* if file has already existed, overwrite * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	bool file_exist = std::filesystem::exists(std::filesystem::path(filename));
+	if (file_exist) {
+		std::cout << "file " << filename << " has already existed, overwriting ...\n";
+		if (out_driver->Delete(filename) != OGRERR_NONE) {
+			std::cerr << "Error: couldn't overwrite file\n";
+			return;
+		}
+	}
+	else std::cout << "Writing " << out_driver_name << " file " << filename << "...\n";
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+	// get datasource
+	const char* out_name = filename;
+	GDALDataset* out_dataset = out_driver->Create(out_name, 0, 0, 0, GDT_Unknown, nullptr);
+	if (out_dataset == nullptr) {
+		std::cerr << "Error: couldn't create file: " << out_name << '\n';
+		return;
+	}
+
+
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* for polygons / edges / vertices
+	* stored in different layers
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+
+	// add triangle faces ------------------------------------------------------------------------------------------------
+	std::cout << "-- output gpkg, write polygons" << '\n';
+	// get layer for polygons
+	OGRLayer* out_layer_polygons = out_dataset->CreateLayer("polygons");
+	if (out_layer_polygons == nullptr) {
+		std::cerr << "Error: couldn't create layer - polygons." << '\n';
+		return;
+	}
+	// field for layer - polygons
+	OGRFieldDefn out_field_polygons("id", OFTString);
+	out_field_polygons.SetWidth(32);
+	if (out_layer_polygons->CreateField(&out_field_polygons) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
+		return;
+	}
+
+	// add triangle faces
+	//int count = 0;
+	for (auto const& fh : cdt.finite_face_handles()) { // must use reference here: auto const& or Face_handle&
+
+		//std::cout << "count: " << count++ << '\n';
+
+		// if the current fh contains at least one constrained edge
+		/*bool contains_constrained = false;
+		for (int i = 0; i < 3; ++i) {
+			CDT::Edge cdt_ege(fh, i);
+			if (cdt.is_constrained(cdt_ege))
+				contains_constrained = true;
+		}*/
+
+		// - create local feature for each triangle face and set attribute (if any)
+		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_polygons->GetLayerDefn());
+		//const char* contains_constrained_field = contains_constrained ? "true" : "false";
+		ogr_feature->SetField("id", fh->info().faceid_collection[0].c_str()); // set attribute - id
+
+		// - create local geometry object
+		OGRPolygon* ogr_polygon = new OGRPolygon; // using new keyword
+		OGRLinearRing* ogr_ring = new OGRLinearRing;
+		//std::cout << "--check: construct ring" << '\n';
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(0)->point().x()), CGAL::to_double(fh->vertex(0)->point().y()));
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(1)->point().x()), CGAL::to_double(fh->vertex(1)->point().y()));
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(2)->point().x()), CGAL::to_double(fh->vertex(2)->point().y()));
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(0)->point().x()), CGAL::to_double(fh->vertex(0)->point().y()));
+		ogr_ring->closeRings(); // ogr ring must be closed
+		ogr_polygon->addRingDirectly(ogr_ring); // assumes ownership, no need to use 'delete' key word of created OGRLinearRing
+		//std::cout << "--check: finish construct ring" << '\n';
+
+		// - set geometry
+		ogr_feature->SetGeometryDirectly(ogr_polygon); // assumes ownership, no need to use 'delete' key word of created OGRPolygon
+		//std::cout << "--check: set geometry" << '\n';
+
+		// - create feature in the file
+		if (out_layer_polygons->CreateFeature(ogr_feature) != OGRERR_NONE) {
+			std::cout << "Error: couldn't create feature." << '\n';
+			return;
+		}
+		//std::cout << "--check: create feature" << '\n';
+		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+	} // end for: finite face handles
+	// add triangle faces ------------------------------------------------------------------------------------------------
+
+
+	// add vertices ------------------------------------------------------------------------------------------------------
+	std::cout << "-- output gpkg, write vertices" << '\n';
+	// get layer for vertices
+	OGRLayer* out_layer_vertices = out_dataset->CreateLayer("vertices");
+	if (out_layer_vertices == nullptr) {
+		std::cerr << "Error: couldn't create layer - vertices." << '\n';
+		return;
+	}
+	// field for layer - vertices
+	OGRFieldDefn out_field_vertices("type", OFTString);
+	out_field_vertices.SetWidth(32);
+	if (out_layer_vertices->CreateField(&out_field_vertices) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer vertices" << '\n';
+		return;
+	}
+
+	// add coordinates
+	// field for layer vertices - point x coordinates
+	OGRFieldDefn out_field_vertices_x("X", OFTReal);
+	out_field_vertices_x.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
+	if (out_layer_vertices->CreateField(&out_field_vertices_x) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
+		return;
+	}
+
+	// field for layer vertices - point y coordinates
+	OGRFieldDefn out_field_vertices_y("Y", OFTReal);
+	out_field_vertices_y.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
+	if (out_layer_vertices->CreateField(&out_field_vertices_y) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
+		return;
+	}
+
+	// add vertices
+	for (auto const& vh : cdt.finite_vertex_handles()) {
+
+		// - create local feature for each triangle face and set attribute (if any)
+		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn());
+		ogr_feature->SetField("type", "point 2D"); // set attribute
+		ogr_feature->SetField("X", CGAL::to_double(vh->point().x())); // set attribute
+		ogr_feature->SetField("Y", CGAL::to_double(vh->point().y())); // set attribute
+
+		// - create local geometry object
+		OGRPoint ogr_pt;
+		ogr_pt.setX(CGAL::to_double(vh->point().x()));
+		ogr_pt.setY(CGAL::to_double(vh->point().y()));
+
+		// - set geometry
+		ogr_feature->SetGeometry(&ogr_pt);
+
+		// - create feature in the file
+		if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
+			std::cout << "Error: couldn't create feature." << '\n';
+			return;
+		}
+		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+	}
+	// add vertices ------------------------------------------------------------------------------------------------------
+
+
+	// add edges ---------------------------------------------------------------------------------------------------------
+	std::cout << "-- output gpkg, write edges" << '\n';
+	// get layer for Edges
+	OGRLayer* out_layer_edges = out_dataset->CreateLayer("edges");
+	if (out_layer_edges == nullptr) {
+		std::cerr << "Error: couldn't create layer - edges." << '\n';
+		return;
+	}
+	// field for layer - edges
+	OGRFieldDefn out_field_edges("type", OFTString);
+	out_field_edges.SetWidth(32);
+	if (out_layer_edges->CreateField(&out_field_edges) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
+		return;
+	}
+
+	// add edges
+	std::vector<Edge_with_info> edges;
+	Edge_with_info edge; // one declaration for multiple usages
+	for (Face_handle fh : cdt.finite_face_handles()) {
+		for (int i = 0; i != 3; ++i) {
+
+			// mark the constrained status
+			CDT::Edge cdt_ege(fh, i);
+			if (cdt.is_constrained(cdt_ege)) {
+				edge.is_constrained = true;
+			}
+			else {
+				edge.is_constrained = false;
+			}
+
+			// get the custom edge with (x1, y1, x2, y2)
+			int cw = CDT::cw(i);
+			int ccw = CDT::ccw(i);
+			edge.x1 = CGAL::to_double(fh->vertex(cw)->point().x());
+			edge.y1 = CGAL::to_double(fh->vertex(cw)->point().y());
+			edge.x2 = CGAL::to_double(fh->vertex(ccw)->point().x());
+			edge.y2 = CGAL::to_double(fh->vertex(ccw)->point().y());
+			if (std::find(edges.begin(), edges.end(), edge) == edges.end())
+				edges.emplace_back(edge); // if not existed
+		} // for each face - traverse its three vertices and get the edge opposite to vertex i
+	} // for loop: all finite face handles
+
+	// add edges to OGRLineString
+	for (auto const& e : edges) { // change const auto& to index-based?
+
+		// - create local feature for each triangle face and set attribute (if any)
+		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_edges->GetLayerDefn());
+		const char* constrained_field = e.is_constrained ? "constrained" : "non constrained";
+		ogr_feature->SetField("type", constrained_field); // set attribute
+
+		// - create local geometry object
+		OGRLineString ogr_line;
+		ogr_line.addPoint(e.x1, e.y1);
+		ogr_line.addPoint(e.x2, e.y2);
+
+		// - set geometry
+		ogr_feature->SetGeometry(&ogr_line);
+
+		// - create feature in the file
+		if (out_layer_edges->CreateFeature(ogr_feature) != OGRERR_NONE) {
+			std::cout << "Error: couldn't create feature." << '\n';
+			return;
+		}
+		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+
+	} // for loop: all edges
+	// add edges ---------------------------------------------------------------------------------------------------------
+
+	// close dataset
+	GDALClose(out_dataset);
+
+	// clean up
+	GDALDestroyDriverManager();
+}
+

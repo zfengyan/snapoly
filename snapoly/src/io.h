@@ -69,6 +69,18 @@ namespace snapoly {
 		void export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec);
 
 
+		/**
+		* Output a constrained delaunay triangulation to a .gpkg(geopackage) file.
+		* TODO: need to fix edge output issues - const auto& - solved using index-based
+		* Output three layers: polygons(triangles), edges, vertices
+		* @param filename: output file name, e.g. "example.gpkg"
+		* @param cdt: constrained dealunay triangulation
+		* @return bool: true for success otherwise false
+		*/
+		void export_to_gpkg(const char* filename, CDT& cdt);
+
+
+
 	} // namespace io
 } // namespace snapoly
 
