@@ -104,6 +104,19 @@ public:
 		return count;
 	}
 
+	/*
+	* check whether a point lies inside a CDTPolygon (possibly with hole(s))
+	* Point type must be Traits::Point_2
+	*
+	* for each polygon
+	* let's assume each polygon has at least one hole
+	* so we need two variables: outerSide and innerSide to decide whether a point lies in the polygon
+	* the condition is:
+	* outerSide == CGAL::ON_BOUNDED_SIDE -> inside the exterior ring
+	* innerSide == CGAL::ON_UNBOUNDED_SIDE -> outside the EACH interior ring
+	*/
+	static bool is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& pgn);
+
 protected:
 	Polygon_2 m_outerRing; // exterior ring of a polygon
 	vector<Polygon_2> m_innerRings; // possible holes in the polygon
@@ -201,7 +214,7 @@ public:
 	* snap from the minimum, maybe two close vertices or vertex - edge
 	* depends on the length -> each time snap the minimum
 	*/
-	void dynamic_snap();
+	void snap_rounding();
 
 
 	/*
@@ -218,6 +231,13 @@ protected:
 	Enhanced_triangulation et; // the enhanced constrained Delaunay triangulation 
 
 };
+
+
+namespace snapoly {
+	namespace printer {
+		void print(const Polygon_2& polygon_2);
+	}
+}
 
 
 

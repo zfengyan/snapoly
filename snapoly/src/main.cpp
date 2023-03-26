@@ -45,11 +45,19 @@ int main()
 	cout << std::get<2>(find) << '\n';
 
 
+	// -----------------------------------------------------------------------------------------
+
 	Snap_rounding_2 sr;
 	const char* input_file = R"(D:\snapoly\data\ab.gpkg)"; // Andorra_buildings_1
 	snapoly::io::add_polygons_from_input_file(input_file, sr.polygons());
 
-	
+	sr.insert_polygons_to_triangulation();
+
+	sr.add_tag_to_triangulation();
+
+	sr.set_tolerance(1.50659e-05); // 9.50158e-06
+
+	sr.snap_rounding();
 	
 	
 	// -----------------------------------------------------------------------------------------

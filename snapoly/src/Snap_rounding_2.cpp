@@ -1,30 +1,389 @@
 #include "pch.h"
 #include "Snap_rounding_2.h"
 
+// is a point inside a CDTPolygon
+bool CDTPolygon::is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& pgn)
+{
+	// Knernel that will be used in CGAL::bounded_side_2 function
+	Kernel kernel{};
+
+	// variables for predicate
+	CGAL::Bounded_side outerSide = CGAL::ON_BOUNDED_SIDE; // initialized as inside
+	CGAL::Bounded_side innerSide = CGAL::ON_UNBOUNDED_SIDE; // initialized as outside
+
+	// check if point lies inside the exterior (outer boundary)
+	outerSide = CGAL::bounded_side_2(pgn.outer_boundary().vertices_begin(), pgn.outer_boundary().vertices_end(), pt, kernel);
+
+	// check if point lies outside each interior (ALL of the interiors)
+	for (auto const& hole : pgn.holes()) {
+		innerSide = CGAL::bounded_side_2(hole.vertices_begin(), hole.vertices_end(), pt, kernel);
+		if (innerSide != CGAL::ON_UNBOUNDED_SIDE)return false;
+	}
+
+	// return true only if two conditions are satisfied
+	return ((outerSide == CGAL::ON_BOUNDED_SIDE) && (innerSide == CGAL::ON_UNBOUNDED_SIDE));
+}
+
+// set the tolerance
 void Snap_rounding_2::set_tolerance(double tolerance_param)
 {
+	m_tolerance = tolerance_param;
+	m_squared_tolerance = m_tolerance * m_tolerance;
+	cout << "the tolerance is set to: " << m_tolerance << '\n';
 }
 
+// consider the boundaries of polygons as constraints and insert them to the triangulation
 void Snap_rounding_2::insert_polygons_to_triangulation()
 {
+	for (auto const& pgn : m_polygons)
+	{
+		// insert exterior as constraints
+		for (auto iter = pgn.outer_boundary().edges_begin(); iter != pgn.outer_boundary().edges_end(); ++iter)
+		{
+			et.insert_constraint(iter->source(), iter->target());
+		}
+
+		// if not containing hole(s), continue
+		//if (!pgn.has_holes())continue;
+
+		// if containing holes, insert as constraints
+		for (auto const& hole : pgn.holes())
+		{
+			for (auto iter = hole.edges_begin(); iter != hole.edges_end(); ++iter)
+			{
+				et.insert_constraint(iter->source(), iter->target());
+			}
+		}
+
+	}
 }
 
+// add tag to one polygon
 void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CDTPolygon& refPgn)
 {
+	if (et.is_infinite(startingFace)) {
+		std::cerr << "currently the seeding face can not be an infinite face, please check: \n"
+			<< "add_tag_to_one_polygon() function in Snap_rounding.hpp file" << endl;
+		return;
+	}
+
+	queue<Face_handle> faces; // for BFS
+
+	// enqueue the seedingFace
+	faces.push(startingFace);
+
+	while (!faces.empty())
+	{
+		// process the front element
+		// when adding elements to the queue, some faces may be added more than once
+		// in this sense we need to judge if it has been processed yet before we process it
+		Face_handle currentFace = faces.front();
+
+		if (!currentFace->info().processed) { // if not yet been processed, process it
+
+			currentFace->info().faceid_collection.push_back(refPgn.id()); // a face may be tagged more than once
+
+			// === tag the constrained edges of this face (if any) ===
+			for (int currentVertex = 0; currentVertex < 3; ++currentVertex) { // find the possible constrained edges of the current face
+				Edge e;
+				e.first = currentFace;
+				e.second = currentVertex;
+				if (et.is_constrained(e)) { // if it is a constrained edge
+					auto vertex_pair = et.vertices_of_edge(e); // get two vertices of the constrained edge
+					Vertex_handle va = vertex_pair.first;
+					Vertex_handle vb = vertex_pair.second;
+					Constraint c(va->point(), vb->point());
+
+					// attach the tag info and add it to the constraintsWithID collection
+					c.idCollection.push_back(currentFace->info().faceid_collection[1]);
+					m_constraintsWithInfo.push_back(c);
+				}
+			} // end for: all three edges of the current face
+			// === tag the constrained edges of this face (if any) ===
+
+			currentFace->info().processed = true;
+		}
+
+		faces.pop(); // if already processed, pop it
+
+		// Add all possible finite neighbours - not crossing constrained edges and not yet processed
+		for (int i = 0; i < 3; ++i) {
+			Face_handle neighborFace = currentFace->neighbor(i);
+			if (!et.is_infinite(neighborFace)) { // only add finite neighbors
+				Edge commonEdge = et.common_edge(currentFace, neighborFace);
+				if ((!et.is_constrained(commonEdge)) && (!neighborFace->info().processed)) {
+					faces.push(neighborFace);
+				}
+			}
+		} // end for: all neighbors (including infinite neighbors)
+
+	} // end while: while the queue is not empty
 }
 
+// add tags to the triangulation
 void Snap_rounding_2::add_tag_to_triangulation()
 {
+	// if empty vector
+	if (m_polygons.size() == 0) {
+		std::cerr << "no polygons found, please check! \n";
+		return;
+	}
+
+	// for each polygon, polygon itself should not be changed during the tagging
+	// the overlapping case is not handled here
+	for (auto const& pgn : m_polygons)
+	{
+		std::size_t numExterior = static_cast<std::size_t>(pgn.number_of_exterior_points());
+		vector<Face_handle> starting_faces;
+		starting_faces.reserve(numExterior + 1); // each face handle corresponds to a vertex if possible
+
+		for (auto constIter = pgn.exterior_begin(); constIter != pgn.exterior_end(); ++constIter) {
+			CDTPoint p(constIter->x(), constIter->y());
+			Face_circulator fc = et.incident_faces(et.insert(p)), fc_done(fc); // here insert might introduce new point which is removed by remove_overlap
+			if (fc != 0) {
+				do {
+					if (!et.is_infinite(fc))
+					{
+						CDTPoint centroid = CGAL::centroid(fc->vertex(0)->point(), fc->vertex(1)->point(), fc->vertex(2)->point());
+						bool centroid_inside = CDTPolygon::is_point_inside_polygon(centroid, pgn); // check inside
+						if (centroid_inside) {
+							starting_faces.push_back(static_cast<Face_handle>(fc));
+							break;
+						}
+					}
+
+				} while (++fc != fc_done);
+			}
+		}// cout << "starting faces size: " << starting_faces.size() << '\n';		
+
+		// add tag for each starting face
+		if (starting_faces.size()) {
+			for (auto& start_face : starting_faces) {
+				add_tag_to_one_polygon(start_face, pgn);
+			}
+		}
+
+	} // end for: polygons
+
 }
 
+// snap close vertices
 void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 {
+	// process the geometry - update the constraintsWithID first and then alter the triangulation
+		// ===========================================================================================================
+	auto vertex_pair = et.vertices_of_edge(edgeOfVertexToVertex);
+	Vertex_handle va = vertex_pair.first;
+	Vertex_handle vb = vertex_pair.second;
+
+	std::vector<CDTPoint> constrained_incident_vertices_va; // incident constrainted points of va
+	std::vector<CDTPoint> constrained_incident_vertices_vb; // incident constrainted points of vb
+
+	CDTPoint centroid = et.edge_centroid(edgeOfVertexToVertex); // get the centroid of the constrained degenerate edge
+
+	// check if va - vb is constrained, if constrained we need to remove it from the constrintsWithInfo
+	if (et.is_constrained(edgeOfVertexToVertex)) {
+		Constraint c(va->point(), vb->point());
+		m_constraintsWithInfo.remove(c);
+	}
+
+	// ATTENTION: Will re-introduction of constraints intersect with other constraints?
+
+	// for va and constraints of va, update the corresponding constraint in constraintsWithInfo 
+	// if va-vb is constrained, vb is not one of the incident points of constraints of va
+	et.get_constrained_incident_vertices(va, constrained_incident_vertices_va, vb);
+	for (auto& incidentPoint : constrained_incident_vertices_va) {
+		Constraint c(va->point(), incidentPoint);
+		for (auto& refC : m_constraintsWithInfo) { // find the constraint in the vector
+			if (c == refC) { // change the point to the centroid
+				if (refC.p0 == va->point())
+					refC.p0 = centroid;
+				else 
+					refC.p1 = centroid;
+			}
+		}
+	} // end for: all incident points of va 
+
+	//for vb and constraints of vb, update the corresponding constraint in constraintsWithInfo 
+	// if va-vb is constrained, va is not one of the incident points of constraints of vb
+	et.get_constrained_incident_vertices(vb, constrained_incident_vertices_vb, va);
+	for (auto& incidentPoint : constrained_incident_vertices_vb) {
+		Constraint c(vb->point(), incidentPoint);
+		for (auto& refC : m_constraintsWithInfo) { // find the constraint in the vector
+			if (c == refC) { // change the point to the centroid
+				if (refC.p0 == vb->point())
+					refC.p0 = centroid;
+				else 
+					refC.p1 = centroid;
+			}
+		}
+	} // end for: all incident points of vb
+
+	// modification of the original triangulation is a must
+	// otherwise the close vertices will always be found
+
+	//test
+	/*cout << "va: " << va->point() << '\n';
+	cout << "incident points of constraints: " << '\n';
+	for (auto const& p : incident_points_of_constraints_va)
+		cout << p << '\n';
+	cout << '\n';
+	cout << "vb: " << vb->point() << '\n';
+	cout << "incident points of constraints: " << '\n';
+	for (auto const& p : incident_points_of_constraints_vb)
+		cout << p << '\n';*/
+	//test
+
+	// after updating the constraintsWithInfo, alter the triangulation
+	et.remove_edge(edgeOfVertexToVertex); //remove the edge - remove the vertices of the constrained degenerate edge
+
+	// re-introduce the constraints with the centroid and other incident vertices of constraints
+
+	// re-introduce the constraints incident to va
+	if (!constrained_incident_vertices_va.empty())
+	{
+		for (auto const& p : constrained_incident_vertices_va)
+			et.insert_constraint(centroid, p);
+	}
+
+	// re-introduce the constraints incident to vb
+	if (!constrained_incident_vertices_vb.empty()) {
+		for (auto const& p : constrained_incident_vertices_vb)
+			et.insert_constraint(centroid, p);
+	}
+
+	// if no constrained points found, insert the centroid
+	if (constrained_incident_vertices_va.empty() || constrained_incident_vertices_vb.empty())
+		et.insert(centroid);
+
+	//cout << "processing geometry done\n"; cout << '\n';
+
 }
 
+// snap close vertex to boundary
 void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int capturingVertexIndex)
 {
+	// we should also avoided altering the triangulation while traversing it
+
+	// get the capturingVertex
+	// (sliverFace, oppositeVertexIndex) represents for the constrained base edge
+	Vertex_handle capturingVertex = sliverFace->vertex(capturingVertexIndex);
+
+	auto vertexPairOfConstrainedBase = et.vertices_of_edge(sliverFace, capturingVertexIndex);
+	Vertex_handle va = vertexPairOfConstrainedBase.first;
+	Vertex_handle vb = vertexPairOfConstrainedBase.second;
+
+	// update constraintsWithInfo first
+
+	// get the constraint of the constrained base
+	Constraint c(va->point(), vb->point());
+
+	// add new constraints with info to the constraintsWithInfo
+	Constraint ca(va->point(), capturingVertex->point());
+	Constraint cb(vb->point(), capturingVertex->point());
+
+	// get the id of the corresponding constraint in the constraintWithInfo and attach it to new constraints with info
+	for (auto& refC : m_constraintsWithInfo) {
+		if (c == refC) {
+			if (refC.idCollection.size() > 1) { // if refC has a tag
+				ca.idCollection.emplace_back(refC.idCollection[1]);
+				cb.idCollection.emplace_back(refC.idCollection[1]);
+			}
+		}
+	}
+
+	// add ca and cb to constraintsWithInfo
+	m_constraintsWithInfo.push_back(ca);
+	m_constraintsWithInfo.push_back(cb);
+
+	// remove the constraint from the constraintsWithInfo
+	m_constraintsWithInfo.remove(c);
+
+	// modify the geometry of the triangulation
+
+	//cout << "processing geometry ... \n";
+	int ccw = sliverFace->ccw(capturingVertexIndex);
+	int cw = sliverFace->cw(capturingVertexIndex);
+	et.mark_constrained(sliverFace, ccw);
+	et.mark_constrained(sliverFace, cw); // ensure the other edges constrained (if not make constrained)
+	// remove the constrained of the constrained base, just the constraint status is changed, the local structure does not change
+	et.remove_constrained_edge(sliverFace, capturingVertexIndex);
+	//cout << "processing geometry done\n";
 }
 
-void Snap_rounding_2::dynamic_snap()
+// snap rounding
+void Snap_rounding_2::snap_rounding()
 {
+	cout << '\n';
+	cout << "snap rounding... \n";
+
+	//-------------------------------------------------------------------------------------------------------------------------
+	while (true) {
+
+		// find minimum vertex to vertex
+		std::tuple<Face_handle, int, Kernel::FT>
+			findMinimumVertexToVertex = et.find_minimum_vertex_to_vertex(m_squared_tolerance);
+		Face_handle incidentFaceVertexToVertex = std::get<0>(findMinimumVertexToVertex);
+		int indexVertexToVertex = std::get<1>(findMinimumVertexToVertex);
+		Kernel::FT minSquaredDistVertexToVertex = std::get<2>(findMinimumVertexToVertex);
+		Edge edgeOfVertexToVertex(incidentFaceVertexToVertex, indexVertexToVertex); // edge connecting two close vertices
+
+		// find minimum vertex to boundary
+		std::tuple<Face_handle, int, Kernel::FT>
+			findMinimumVertexToBoundary = et.find_minimum_vertex_to_boundary(m_squared_tolerance);
+		Face_handle sliverFace = std::get<0>(findMinimumVertexToBoundary);
+		int capturingVertexIndex = std::get<1>(findMinimumVertexToBoundary);
+		Kernel::FT minSquaredDistVertexToBoundary = std::get<2>(findMinimumVertexToBoundary);
+
+		//cout << indexVertexToVertex << " " << capturingVertexIndex << '\n';
+		//cout << "minimum distance of Vertex to Vertex: " << std::sqrt(minSquaredDistVertexToVertex) << '\n';
+		//cout << "minimum distance of Vertex to Boundary: " << std::sqrt(minSquaredDistVertexToBoundary) << '\n';
+
+		// exit condition
+		// if close vertex to vertex and vertex to boundary are not found
+		if (indexVertexToVertex == snapoly::constants::NOT_EXIST && capturingVertexIndex == snapoly::constants::NOT_EXIST)break;
+		else if (indexVertexToVertex == snapoly::constants::NOT_EXIST && capturingVertexIndex != snapoly::constants::NOT_EXIST) {
+			// call snap vertex to boundary 
+			cout << "no more close vertex - vertex is found under given tolerance, snap vertex to boundary\n";
+			snap_vertex_to_boundary(sliverFace, capturingVertexIndex); cout << '\n';
+		}
+		else if (indexVertexToVertex != snapoly::constants::NOT_EXIST && capturingVertexIndex == snapoly::constants::NOT_EXIST) {
+			// call snap vertex to vertex
+			cout << "no more close vertex - boundary is found under given tolerance, snap vertex to vertex\n";
+			snap_vertex_to_vertex(edgeOfVertexToVertex); cout << '\n';
+		}
+		else {
+			// compare the squared distance
+			// if vertex to vertex is closer than vertex to boundary, snap vertex to vertex first
+			// if not (> or ==), snap vertex to boundary (when ==, snap vertex to boundary is a more robust way)
+			if ((minSquaredDistVertexToVertex + snapoly::constants::EPSILON) < minSquaredDistVertexToBoundary) {
+				snap_vertex_to_vertex(edgeOfVertexToVertex);
+				cout << "snap vertex to vertex first \n"; cout << '\n';
+			}
+			else {
+				snap_vertex_to_boundary(sliverFace, capturingVertexIndex);
+				cout << "snap vertex to boundary first \n"; cout << '\n';
+				//et.print_face(sliverFace);
+				//cout << sliverFace->vertex(capturingVertexIndex)->point() << '\n';
+			}
+
+		}
+
+	} // end while: until no cases are found under given tolerance
+
+	//-------------------------------------------------------------------------------------------------------------------------
+
+	cout << "done \n";
+	cout << '\n';
+}
+
+// print a Polygon_2
+void snapoly::printer::print(const Polygon_2& polygon_2)
+{
+	cout << "=== CGAL::Polygon_2 (Ring) ===\n";
+	for (auto iter = polygon_2.vertices_begin(); iter != polygon_2.vertices_end(); ++iter)
+	{
+		cout << "(" << iter->x() << ", " << iter->y() << ")" << '\n';
+	}
+	cout << "======\n";
 }
