@@ -39,22 +39,13 @@ namespace snapoly {
 		void add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>& polygons);
 
 
-
 		/*
 		* export to GPKG file
 		*/
-		void export_to_gpkg();
-
-
-
+		void export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo);
 
 
 	} // namespace io
-
-
-
-
-
 } // namespace snapoly
 
 

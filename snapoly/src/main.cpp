@@ -59,6 +59,10 @@ int main()
 
 	sr.snap_rounding();
 	
+	const char* output_file = R"(D:\snapoly\data\ab_res.gpkg)"; // Andorra_buildings_1
+	snapoly::io::export_to_gpkg(output_file, sr.constraintsWithInfo());
+
+	cout << "file saved at: " << output_file << '\n';
 	
 	// -----------------------------------------------------------------------------------------
 	

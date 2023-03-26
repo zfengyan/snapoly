@@ -223,6 +223,13 @@ public:
 	vector<CDTPolygon>& polygons() { return m_polygons; }
 	const vector<CDTPolygon>& polygons() const { return m_polygons; }
 
+
+	/*
+	* get boundaries
+	*/
+	list<Constraint>& constraintsWithInfo() { return m_constraintsWithInfo; }
+	const list<Constraint>& constraintsWithInfo() const { return m_constraintsWithInfo; }
+
 protected:
 	double m_tolerance; // snap rounding tolerance
 	double m_squared_tolerance; // squared tolerance

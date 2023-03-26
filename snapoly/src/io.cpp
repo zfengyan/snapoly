@@ -229,3 +229,85 @@ void snapoly::io::add_polygons_from_input_file(const char* input_file, vector<CD
 	GDALClose(poDataset); // close the dataset
 
 }
+
+// output boundaries
+void snapoly::io::export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo)
+{
+	GDALAllRegister();
+
+	// get driver
+	const char* out_driver_name = "GPKG"; // output as .gpkg file
+	GDALDriver* out_driver = GetGDALDriverManager()->GetDriverByName(out_driver_name);
+	if (out_driver == nullptr) {
+		std::cerr << "Error: OGR driver not found\n";
+		return;
+	}
+
+	/* if file has already existed, overwrite * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	bool file_exist = std::filesystem::exists(std::filesystem::path(filename));
+	if (file_exist) {
+		std::cout << "file " << filename << " has already existed, overwriting ...\n";
+		if (out_driver->Delete(filename) != OGRERR_NONE) {
+			std::cerr << "Error: couldn't overwrite file\n";
+			return;
+		}
+	}
+	else std::cout << "Writing " << out_driver_name << " file " << filename << "...\n";
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+	// get datasource
+	const char* out_name = filename;
+	GDALDataset* out_dataset = out_driver->Create(out_name, 0, 0, 0, GDT_Unknown, nullptr);
+	if (out_dataset == nullptr) {
+		std::cerr << "Error: couldn't create file: " << out_name << '\n';
+		return;
+	}
+
+	// add constraints ---------------------------------------------------------------------------------------------------------
+	std::cout << "-- output gpkg, write constraints with info" << '\n';
+	// get layer for Edges
+	OGRLayer* out_layer_edges = out_dataset->CreateLayer("edges");
+	if (out_layer_edges == nullptr) {
+		std::cerr << "Error: couldn't create layer - edges." << '\n';
+		return;
+	}
+	// field for layer - edges
+	OGRFieldDefn out_field_edges("ID", OFTString);
+	out_field_edges.SetWidth(32);
+	if (out_layer_edges->CreateField(&out_field_edges) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
+		return;
+	}
+
+	// add constraints with info to OGRLineString
+	for (auto const& c : constraintsWithInfo) {
+
+		// - create local feature for each triangle face and set attribute (if any)
+		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_edges->GetLayerDefn());
+		ogr_feature->SetField("ID", c.idCollection[1].c_str()); // set attribute
+
+		// - create local geometry object
+		OGRLineString ogr_line;
+		ogr_line.addPoint(c.p0.x(), c.p0.y());
+		ogr_line.addPoint(c.p1.x(), c.p1.y());
+
+		// - set geometry
+		ogr_feature->SetGeometry(&ogr_line);
+
+		// - create feature in the file
+		if (out_layer_edges->CreateFeature(ogr_feature) != OGRERR_NONE) {
+			std::cout << "Error: couldn't create feature." << '\n';
+			return;
+		}
+		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+
+	} // for loop: all edges
+	// add edges ---------------------------------------------------------------------------------------------------------
+
+	// close dataset
+	GDALClose(out_dataset);
+
+	// clean up
+	GDALDestroyDriverManager();
+
+}
