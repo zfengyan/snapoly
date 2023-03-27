@@ -16,7 +16,7 @@ int main()
 {
 
 	Snap_rounding_2 sr;
-	const char* input_file = R"(D:\snapoly\data\case.gpkg)"; // Andorra_buildings_1
+	const char* input_file = R"(D:\snapoly\data\ab.gpkg)"; // Andorra_buildings_1
 	snapoly::io::add_polygons_from_input_file(input_file, sr.polygons());
 
 	sr.insert_polygons_to_triangulation();
@@ -27,21 +27,21 @@ int main()
 
 	sr.snap_rounding();
 
-	const char* output_file = R"(D:\snapoly\data\casecon.gpkg)"; // Andorra_buildings_1
+	const char* output_file = R"(D:\snapoly\data\abcon.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(output_file, sr.constraintsWithInfo());
 
 	cout << "file saved at: " << output_file << '\n';
 
 	// -----------------------------------------------------------------------------------------
 
-	const char* res_file = R"(D:\snapoly\data\caseres.gpkg)"; // Andorra_buildings_1
+	const char* res_file = R"(D:\snapoly\data\abres.gpkg)"; // Andorra_buildings_1
 
 	vector<CDTPolygon> resPolygonsVec;
 	snapoly::io::build_polygons_from_constraints(sr.constraintsWithInfo(), resPolygonsVec);
 
 	snapoly::io::export_to_gpkg(res_file, resPolygonsVec);
 
-	const char* tri_file = R"(D:\snapoly\data\casetri.gpkg)"; // Andorra_buildings_1
+	const char* tri_file = R"(D:\snapoly\data\abtri.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(tri_file, sr.triangulation());
 
 
