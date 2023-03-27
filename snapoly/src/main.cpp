@@ -36,10 +36,9 @@ int main()
 
 	const char* res_file = R"(D:\snapoly\data\abres.gpkg)"; // Andorra_buildings_1
 
-	vector<CDTPolygon> resPolygonsVec;
-	snapoly::io::build_polygons_from_constraints(sr.constraintsWithInfo(), resPolygonsVec);
+	snapoly::io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
 
-	snapoly::io::export_to_gpkg(res_file, resPolygonsVec);
+	snapoly::io::export_to_gpkg(res_file, sr.result_polygons());
 
 	const char* tri_file = R"(D:\snapoly\data\abtri.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(tri_file, sr.triangulation());
