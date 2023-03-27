@@ -167,6 +167,69 @@ void Snap_rounding_2::add_tag_to_triangulation()
 
 }
 
+// remove dangles in the constraintsWithInfo list
+//   a   b           centroid
+//   /\  /\           / | \ 
+//  /  \/  \    ->   /  |  \
+//  |      |         |     |
+// after snap rounding a and b, there will be redundant constraint dangles in the middle (connecting to the centroid)
+// <1> remove dangles from the constraintsWithInfo list
+// <2> remove dangles from the triangulation
+void Snap_rounding_2::remove_dangles()
+{
+	vector<Constraint> danglingConstraintsVec; // store the dangling constraints for removing them from the constraints list
+	danglingConstraintsVec.reserve(m_constraintsWithInfo.size());
+
+	vector<CDTPoint> danglingVerticesVec; // store the dangling vertices for removing them from the triangulation
+
+	list<Constraint> constraintsRef = m_constraintsWithInfo; // for references
+
+	for (auto const& c : m_constraintsWithInfo) {
+		// if constraint is a dangle:
+		// for the ending points of constraint: ea and eb
+		// they must be the ending points of other constraints with different ids
+		// if not then this constraint(s) is a dangle
+		int count_endpoint_p0_present_in_other_constraints = 0;
+		int count_endpoint_p1_present_in_other_constraints = 0;
+
+		for (auto const& cRef : constraintsRef) {
+			if (c != cRef) { // not itself - just by location, there can be constraints with different ids at the same location
+				if (c.p0 == cRef.p0 || c.p0 == cRef.p1)
+					++count_endpoint_p0_present_in_other_constraints;
+				if (c.p1 == cRef.p0 || c.p1 == cRef.p1)
+					++count_endpoint_p1_present_in_other_constraints;
+			}
+		} // end for: all reference constraints
+
+		// if c is a dangling constraint and p0 is the dangling point
+		if (!count_endpoint_p0_present_in_other_constraints) {
+			danglingConstraintsVec.push_back(c);
+			danglingVerticesVec.push_back(c.p0);
+		}
+
+		// if c is a dangling constraint and p1 is the dangling point
+		if (!count_endpoint_p1_present_in_other_constraints) {
+			danglingConstraintsVec.push_back(c);
+			danglingVerticesVec.push_back(c.p1);
+		}
+	}
+
+	// remove dangles 1 if any: remove dangling constraints from the constraints list
+	if (danglingConstraintsVec.size()) {
+		for (auto const& dangle : danglingConstraintsVec)
+			m_constraintsWithInfo.remove(dangle);
+	}
+	
+	// remove dangles 2 if any: remove dangling constraints from the triangulation
+	if (danglingVerticesVec.size()) {
+		for (auto const& dangle : danglingVerticesVec) {
+			Vertex_handle v = m_et.insert(dangle); // get the vertex handle of the point
+			m_et.remove(v); // remove the dangling vertex
+			//cout << "dangling vertex: " << v->point() << '\n';
+		}
+	}	
+}
+
 // snap close vertices
 void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 {
@@ -219,18 +282,6 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 		}
 	} // end for: all incident points of vb
 
-	// check redundacy:
-	//   a   b           centroid
-	//   /\  /\           / | \ 
-	//  /  \/  \    ->   /  |  \
-	//  |      |         |     |
-	// after snap rounding a and b, there will be redundant constraints in the middle (connecting to the centroid)
-	// and there will also be dangling vertex
-
-	// remove redundacy
-	//m_constraintsWithInfo.unique();
-
-
 	// modification of the original triangulation is a must
 	// otherwise the close vertices will always be found
 
@@ -267,6 +318,19 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 	// if no constrained points found, insert the centroid
 	if (constrained_incident_vertices_va.empty() || constrained_incident_vertices_vb.empty())
 		m_et.insert(centroid);
+
+	// check redundacy and dangles:
+	//   a   b           centroid
+	//   /\  /\           / | \ 
+	//  /  \/  \    ->   /  |  \
+	//  |      |         |     |
+	// after snap rounding a and b, there will be redundant constraint dangles in the middle (connecting to the centroid)
+	// and there will also be dangling vertex
+
+	// remove dangles - the dangles / redundant dangles will be removed
+	// remove operation includes remove the dangling constraints from the constraints list
+	// and remove the dangling vertices from the triangulation
+	remove_dangles();
 
 	//cout << "processing geometry done\n"; cout << '\n';
 
@@ -321,6 +385,8 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 	// remove the constrained of the constrained base, just the constraint status is changed, the local structure does not change
 	m_et.remove_constrained_edge(sliverFace, capturingVertexIndex);
 	//cout << "processing geometry done\n";
+
+	remove_dangles();
 }
 
 // snap rounding

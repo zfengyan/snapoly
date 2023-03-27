@@ -43,7 +43,7 @@ int main()
 
 	const char* tri_file = R"(D:\snapoly\data\casetri.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(tri_file, sr.triangulation());
-	
+
 
 	return 0;
 }

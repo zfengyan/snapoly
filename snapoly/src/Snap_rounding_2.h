@@ -193,6 +193,18 @@ public:
 
 
 	/*
+	* remove dangles in the constrainsWithInfo list
+	* there can be more than one dangle at the same location
+	*    a   b           centroid
+	*    /\  /\           / | \ 
+	*   /  \/  \    ->   /  |  \
+	*   |      |         |     |
+	* after snap rounding a and b, there will be redundant constraint dangles in the middle (connecting to the centroid)
+	*/
+	void remove_dangles();
+
+
+	/*
 	* snap close vertex to vertex
 	* update constraintsWithInfo first and then modify the triangulation
 	* @param: edgeOfVertexToVertex - indicates the edge which connects two close vertices
