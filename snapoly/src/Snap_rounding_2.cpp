@@ -219,6 +219,18 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 		}
 	} // end for: all incident points of vb
 
+	// check redundacy:
+	//   a   b           centroid
+	//   /\  /\           / | \ 
+	//  /  \/  \    ->   /  |  \
+	//  |      |         |     |
+	// after snap rounding a and b, there will be redundant constraints in the middle (connecting to the centroid)
+	// and there will also be dangling vertex
+
+	// remove redundacy
+	//m_constraintsWithInfo.unique();
+
+
 	// modification of the original triangulation is a must
 	// otherwise the close vertices will always be found
 
@@ -374,8 +386,8 @@ void Snap_rounding_2::snap_rounding()
 		}
 
 		//Debug
-		++count;
-		if (count == 2)break;
+		//++count;
+		//if (count == 2)break;
 		//Debug
 
 	} // end while: until no cases are found under given tolerance
