@@ -117,6 +117,14 @@ public:
 	*/
 	static bool is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& pgn);
 
+
+	/*
+	* calculate the area of a polygon
+	* if containing any holes:
+	* area = areaOfExterior - areaOfHoles
+	*/
+	double area() const;
+
 protected:
 	Polygon_2 m_outerRing; // exterior ring of a polygon
 	vector<Polygon_2> m_innerRings; // possible holes in the polygon
@@ -228,6 +236,13 @@ public:
 	* depends on the length -> each time snap the minimum
 	*/
 	void snap_rounding();
+
+
+	/*
+	* measure the distortions by comparing the changed area
+	* std::abs(area_of_result_polygon - area_of_original_polygon) / area_of_result_polygon
+	*/
+	double measure_distortions() const;
 
 
 	/*

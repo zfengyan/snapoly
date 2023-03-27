@@ -24,6 +24,20 @@ bool CDTPolygon::is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& p
 	return ((outerSide == CGAL::ON_BOUNDED_SIDE) && (innerSide == CGAL::ON_UNBOUNDED_SIDE));
 }
 
+// calculate the area of a CDTPolygon
+double CDTPolygon::area() const
+{
+	const Polygon_2& exterior = m_outerRing;
+	double exteriorArea = std::abs(CGAL::polygon_area_2(exterior.vertices_begin(), exterior.vertices_end(), Kernel()));
+	double interiorArea = 0;
+	if (has_holes()) {
+		for (auto const& hole : holes()) {
+			interiorArea += std::abs(CGAL::polygon_area_2(hole.vertices_begin(), hole.vertices_end(), Kernel()));
+		}
+	}
+	return std::abs(exteriorArea - interiorArea);
+}
+
 // set the tolerance
 void Snap_rounding_2::set_tolerance(double tolerance_param)
 {
@@ -462,6 +476,26 @@ void Snap_rounding_2::snap_rounding()
 
 	cout << "done \n";
 	cout << '\n';
+}
+
+// measure the distortions by area
+double Snap_rounding_2::measure_distortions() const
+{
+	// first make a polygon map
+	unordered_map<string, CDTPolygon> originalPolygons;
+
+	// populate the map
+	for (auto const& poly : m_polygons)
+		originalPolygons[poly.id()] = poly;
+
+	// calculate the area difference
+	double area_diff = 0;
+	for (auto const& resPoly : m_result_polygons) {
+		const string& id = resPoly.id();
+		area_diff += std::abs(originalPolygons[id].area() - resPoly.area());
+	}
+
+	return m_result_polygons.size() > snapoly::constants::EPSILON? (area_diff / m_result_polygons.size()) : 0;
 }
 
 // print a Polygon_2

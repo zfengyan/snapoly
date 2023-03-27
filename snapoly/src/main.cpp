@@ -43,6 +43,9 @@ int main()
 	const char* tri_file = R"(D:\snapoly\data\abtri.gpkg)"; // Andorra_buildings_1
 	snapoly::io::export_to_gpkg(tri_file, sr.triangulation());
 
+	// -----------------------------------------------------------------------------------------
+
+	cout << sr.measure_distortions();
 
 	return 0;
 }
