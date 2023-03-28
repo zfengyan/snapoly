@@ -334,6 +334,8 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 	// clean up
 	GDALDestroyDriverManager();
 
+	cout << "file saved at: " << filename << '\n';
+
 }
 
 // build output polygons from constraints
@@ -341,6 +343,8 @@ void io::build_polygons_from_constraints(
 	list<Constraint>& constraintsWithInfo,
 	vector<CDTPolygon>& resPolygonsVec)
 {
+	cout << "building polygons from constraints ... \n";
+	
 	// build an unordered_map and use the id of constraints as key, the corresponding constraints as value
 	// i.e.constraintsMap[id] = constraints having the id "id"
 	unordered_map<string, vector<Constraint>> constraintsMap;
@@ -353,7 +357,11 @@ void io::build_polygons_from_constraints(
 
 	// build CoordinateSequence for constraints with the same id
 	// Coordinate: (x, y), for each constraint two points -> two Coordinates objects
+	int count = 0; // Debug
 	for (auto& element : constraintsMap) {
+
+		//++count; // Debug
+		//cout << count << '\n'; // Debug
 
 		vector<vector<Coordinate>> coordinates;
 
@@ -376,7 +384,7 @@ void io::build_polygons_from_constraints(
 			c->setPoints(coordinates[i]);
 			coordinateSequences.push_back(c); // make a copy of the pointer
 		}
-
+		
 		// create and store the line strings
 		GeometryFactory::Ptr global_factory = GeometryFactory::create(); // unique_ptr, don't need to delete manually
 
@@ -394,9 +402,16 @@ void io::build_polygons_from_constraints(
 		* calls will return NULL.
 		* @return a collection of Polygons*/
 		std::vector<std::unique_ptr<GEOSPolygon>> polys = pgnizer.getPolygons();
+
+		// it is IMPORTANT to check whether the polys vector is populated
+		if (!polys.size()) {
+			cout << "the constraints with osm_id: " << element.first
+				<< " are not closed, will not form any polygon \n";
+			continue; // continue to the next for loop
+		}
+
 		//cout << "polygon vector size: " << polys.size() << '\t';
 		//cout << "has dangles? " << pgnizer.hasDangles() << '\n';
-
 		// check
 		//if (polys.size() != 1 || pgnizer.hasDangles())
 			//cout << element.first << '\n';
@@ -411,9 +426,14 @@ void io::build_polygons_from_constraints(
 		// polys[0] is the exterior 
 
 		// when adding exterior ring, align with the reading functions: add from backward
+		
+		//cout << count << '\n';
+
 		// exterior ring --------------------------------------------------------------------------------------------------
 		std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[0]->getExteriorRing()->getCoordinates();
 		std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
+		
+
 		// add points of exterior
 		for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
 			const Coordinate& coord = exteriorCoordSeq->getAt(i);
@@ -421,6 +441,7 @@ void io::build_polygons_from_constraints(
 			//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
 		}
 		// add exterior points --------------------------------------------------------------------------------------------
+
 
 		// when adding interior rings, the sequence of interior rings must be oriented CW not CCW
 		// add interior rings ---------------------------------------------------------------------------------------------
@@ -441,7 +462,7 @@ void io::build_polygons_from_constraints(
 
 		}// end for: all interior rings
 		// add interior points --------------------------------------------------------------------------------------------
-
+		
 		// clean up
 		for (unsigned int i = 0; i < geoms.size(); i++) {
 			delete geoms[i];
@@ -451,6 +472,8 @@ void io::build_polygons_from_constraints(
 		resPolygonsVec.push_back(resPolygon);
 
 	} // end for: constraintsMap
+
+	cout << "done \n";
 }
 
 // export the res polygons to gpkg file
@@ -634,6 +657,8 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 
 	// clean up
 	GDALDestroyDriverManager();
+
+	cout << "file saved at: " << filename << '\n';
 
 }
 

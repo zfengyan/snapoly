@@ -13,6 +13,7 @@
 
 int main()
 {
+	cout << "start\n";
 	// files
 	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
 	const char* tri_file = R"(D:\snapoly\data\netherlands\Denhaag_tri.gpkg)";
@@ -21,7 +22,7 @@ int main()
 
 	// Snap rounding
 	Snap_rounding_2 sr;
-	sr.set_tolerance(0.006);
+	sr.set_tolerance(0.2);
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -32,18 +33,18 @@ int main()
 	// find the minimum tolerance ---------------------------------------------
 	std::priority_queue<double> lengthQueue;
 	sr.find_tolerance(lengthQueue);
+	cout << "distances under the current tolerance: " << '\n';
 	while (!lengthQueue.empty()) {
 		cout << lengthQueue.top() << '\n';
 		lengthQueue.pop();
 	}
 	// find the minimum tolerance ---------------------------------------------
 
-	//sr.set_tolerance(1.50659e-05); // 9.50158e-06
+	sr.snap_rounding();
 
-	//sr.snap_rounding();
-	double minimum_distance = sr.minimum_distance();
-	cout << "tolerance: " << sr.tolerance() << " minimum distance under the current tolerance "
-		<< minimum_distance << '\n';
+	//double minimum_distance = sr.minimum_distance();
+	//cout << "tolerance: " << sr.tolerance() << '\n';
+	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
 	//io::export_to_gpkg(tri_file, sr.triangulation());
 
@@ -55,14 +56,15 @@ int main()
 
 	io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
 
-	//io::export_to_gpkg(res_file, sr.result_polygons());
+	io::export_to_gpkg(res_file, sr.result_polygons());
 
-	sr.measure_distortions();
+	sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
 
 
 	// -----------------------------------------------------------------------------------------
 
-	//cout << sr.measure_distortions();
 
 	return 0;
+
+
 }
