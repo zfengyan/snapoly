@@ -53,20 +53,14 @@ void io::add_OGRPolygon_to_polygons(
 
 	for (int i = NumOuterPoints; i > 0; --i)
 	{
-		double x = poOuterRing->getX(i);
-		double y = poOuterRing->getY(i);
-
-		// shift the coordinates
-		x -= minX;
-		y -= minY;
-		
-		polygon.outer_boundary().push_back(CDTPoint(x, y));
+		polygon.outer_boundary().push_back(CDTPoint(poOuterRing->getX(i) - minX, poOuterRing->getY(i) - minY));
 		//cout << poOuterRing->getX(i) << "-" << poOuterRing->getY(i) << '\n';
 	}
 
 	// check
 	//for (auto iter = polygon.outer_boundary().vertices_begin(); iter != polygon.outer_boundary().vertices_end(); ++iter)
 	//	cout << iter->x() << "--" << iter->y() << '\n';
+	//cout << "num of holes: " << poOGRPolygon->getNumInteriorRings() << '\n';
 
 	// add inner rings
 	Polygon_2 hole;
@@ -76,14 +70,7 @@ void io::add_OGRPolygon_to_polygons(
 		int NumInnerPoints = innerRing->getNumPoints() - 1; // first point is the same as the last point
 		for (int j = NumInnerPoints; j > 0; --j) // degenerate cases: NumOfouterRingPoints < 3?
 		{
-			double x = poOuterRing->getX(i);
-			double y = poOuterRing->getY(i);
-
-			// shift the coordinates
-			x -= minX;
-			y -= minY;
-
-			hole.push_back(CDTPoint(x, y));
+			hole.push_back(CDTPoint(innerRing->getX(j) - minX, innerRing->getY(j) - minY));
 		}
 		polygon.holes().push_back(hole);
 		//sr.print_polygon_2(hole);
