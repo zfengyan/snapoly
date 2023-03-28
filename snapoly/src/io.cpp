@@ -1,9 +1,14 @@
 #include "pch.h"
 #include "io.h"
 
+// definition of static variables -------------------------------------------------------------------
 // definition of static class member
 // definition allows the linker to find the memory space for the io::spatialReference variable.
 OGRSpatialReference* io::m_spatialReference = nullptr;
+
+// min values of the current extent of a layer
+double io::minX = std::numeric_limits<double>::infinity();
+double io::minY = std::numeric_limits<double>::infinity();
 
 // add OGRPolygon to polygons vector
 void io::add_OGRPolygon_to_polygons(
@@ -174,10 +179,8 @@ void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>
 
 	// all layers
 	for (OGRLayer* poLayer : poDataset->GetLayers()) {
-
-
+		
 		poLayer->ResetReading(); // ensure we are starting at the beginning of the layer
-
 
 		// get SpatialRef - will be saved and used for creating output files - how to store it?
 		OGRSpatialReference* tmp = poLayer->GetSpatialRef();
@@ -190,6 +193,14 @@ void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>
 		cout << "\tnumber of polygons: " << numberOfPolygons << '\n';
 		polygons.reserve(polygons.size() + numberOfPolygons);
 		cout << "\tnumber of fields: " << poLayer->GetLayerDefn()->GetFieldCount() << '\n';
+
+		// get the extent - data type: double
+		OGREnvelope extentOfLayer;
+		poLayer->GetExtent(&extentOfLayer);
+		cout << "extent: \n";
+		cout << "min X: " << extentOfLayer.MinX << '\t' << "max X: " << extentOfLayer.MaxX << '\n';
+		cout << "min Y: " << extentOfLayer.MinY << '\t' << "max Y: " << extentOfLayer.MaxY << '\n';
+		// get the extent
 
 
 		// Save the polygons, field names and types

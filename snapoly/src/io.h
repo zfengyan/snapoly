@@ -17,6 +17,11 @@ public:
 	// store the spatialReference information
 	static OGRSpatialReference* m_spatialReference;
 
+	// store the minX and minY of a layer for coordinates shifting - note that a dataset could have more than one layer
+	// now just consider one layer in a dataset
+	static double minX;
+	static double minY;
+
 public:
 
 	/*

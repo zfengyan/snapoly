@@ -35,7 +35,7 @@ int main()
 
 	//TODO:
 	//1. coordinates shifting
-	//2. when exporting to the GPKG file, attach the CRS information
+	//2. evaluate matrics - area preportion
 
 	io::export_to_gpkg(tri_file, sr.triangulation());
 
