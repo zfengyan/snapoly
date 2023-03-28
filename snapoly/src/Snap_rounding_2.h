@@ -37,10 +37,6 @@ struct Constraint {
 		return !(*this == rhs);
 	}
 
-	// compare function, for constraintsSet
-	bool operator<(const Constraint& other) const {
-		return (*this != other);
-	}
 
 };
 
@@ -161,7 +157,6 @@ public:
 		m_squared_tolerance(0.09),
 		m_et(),
 		m_constraintsWithInfo(),
-		m_constraintsUnorderedSet(),
 		m_polygons(),
 		m_result_polygons()
 	{
@@ -328,7 +323,7 @@ protected:
 
 	// the foloowing two should be updated simultaneously
 	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
-	unordered_set<Constraint, ConstraintHashFunction> m_constraintsUnorderedSet; // uniquely store the constraint (common boundaries will have multiple ids)
+	//unordered_set<Constraint, ConstraintHashFunction> m_constraintsUnorderedSet; // uniquely store the constraint (common boundaries will have multiple ids)
 
 	vector<CDTPolygon> m_polygons; // store the OGRPolygons
 	vector<CDTPolygon> m_result_polygons; // store the polygons recovered from the constraints with info list

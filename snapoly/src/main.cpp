@@ -62,19 +62,6 @@ int main()
 
 	// -----------------------------------------------------------------------------------------
 
-	std::set<Constraint> constraintsSet;
-
-	Constraint c1(CDTPoint(0.0, 0.0), CDTPoint(1.0, 0.0));
-	Constraint c2(CDTPoint(2.0, 0.0), CDTPoint(0.0, 0.0));
-
-	constraintsSet.insert(c1);
-	constraintsSet.insert(c2);
-
-	cout << constraintsSet.size() << '\n';
-
-	auto it = constraintsSet.find(c1);
-	if (it != constraintsSet.end())
-		cout << "found!\n";
 
 
 	return 0;
