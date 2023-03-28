@@ -381,44 +381,42 @@ void snapoly::io::build_polygons_from_constraints(
 		// build resPolygon
 		CDTPolygon resPolygon;
 		resPolygon.id() = element.first;
-		for (unsigned int i = 0; i < polys.size(); i++) {
-			//cout << "polygon: " << polys[i]->toString() << '\n';
-			//cout << "area: " << polys[i]->getArea() << '\n';
 
+		// if polys.size() > 1
+		// means the polygon contains hole(s)
+		// polys[0] is the exterior 
 
-			// Print the coordinates
+		// when adding exterior ring, align with the reading functions: add from backward
+		// exterior ring --------------------------------------------------------------------------------------------------
+		std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[0]->getExteriorRing()->getCoordinates();
+		std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
+		// add points of exterior
+		for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
+			const Coordinate& coord = exteriorCoordSeq->getAt(i);
+			resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
+			//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+		} 
+		// add exterior points --------------------------------------------------------------------------------------------
 
-			//exterior ring
-			std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[i]->getExteriorRing()->getCoordinates();
-			std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
-
-			for (std::size_t m = 0; m < numOfExteriorPoints; ++m) {
-				const Coordinate& coord = exteriorCoordSeq->getAt(m);
-				resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
+		// when adding interior rings, the sequence of interior rings must be oriented CW not CCW
+		// add interior rings ---------------------------------------------------------------------------------------------
+		for (std::size_t i = 0; i < polys[0]->getNumInteriorRing(); ++i) {
+			std::unique_ptr<CoordinateSequence> holeCoordSeq = polys[0]->getInteriorRingN(i)->getCoordinates();
+			//cout << "hole: " << i << '\n';
+			// represent a hole
+			Polygon_2 hole;
+			std::size_t numOfInteriorPoints = holeCoordSeq->getSize() - 1; // last point is the same as the first
+			for (std::size_t j = numOfInteriorPoints; j > 0; --j) {
+				const Coordinate& coord = holeCoordSeq->getAt(j);
+				hole.push_back(CDTPoint(coord.x, coord.y));
 				//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
-			} // add exterior points
+			} // end for: all points of an interior ring
 
-			// interior ring(s)
-			//cout << "number of inner rings: " << polys[i]->getNumInteriorRing() << '\n';
-			for (std::size_t m = 0; m < polys[i]->getNumInteriorRing(); ++m) {
-				std::unique_ptr<CoordinateSequence> holeCoordSeq = polys[i]->getInteriorRingN(m)->getCoordinates();
+			// add the hole to the CDTPolygon
+			resPolygon.holes().push_back(hole);
 
-				// represent a hole
-				Polygon_2 hole;
-
-				// Print the coordinates of the i-th hole
-				std::cout << "Hole " << i << ":" << std::endl;
-				for (std::size_t j = 0; j < holeCoordSeq->getSize()-1; ++j) {
-					const Coordinate& coord = holeCoordSeq->getAt(j);
-					hole.push_back(CDTPoint(coord.x, coord.y));
-					//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
-				}
-
-				// add the hole to the CDTPolygon
-				resPolygon.holes().push_back(hole);
-			}
-		} // end for: all constraints with same id
-
+		}// end for: all interior rings
+		// add interior points --------------------------------------------------------------------------------------------
 
 		// clean up
 		for (unsigned int i = 0; i < geoms.size(); i++) {
