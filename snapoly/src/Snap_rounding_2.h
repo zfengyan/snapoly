@@ -246,6 +246,25 @@ public:
 
 
 	/*
+	* check the minimum distance under the given tolerance between:
+	* <1> point to point
+	* <2> point to boundary
+	* return the minimum distance
+	*/
+	double minimum_distance() const;
+
+
+	/*
+	* find tolerance
+	* two types of distances:
+	* <1> point to point distance
+	* <2> point to boundary distance
+	* store the distances in a priority queue
+	*/
+	void find_tolerance(std::priority_queue<double>& lengthQueue);
+
+
+	/*
 	* get polygons vector
 	*/
 	vector<CDTPolygon>& polygons() { return m_polygons; }
@@ -271,6 +290,13 @@ public:
 	*/
 	vector<CDTPolygon>& result_polygons() { return m_result_polygons; }
 	const vector<CDTPolygon>& result_polygons() const { return m_result_polygons; }
+
+
+	/*
+	* get the tolerance
+	* tolerance must be modified using set_tolerance() function
+	*/
+	const double& tolerance()const { return m_tolerance; }
 
 protected:
 	double m_tolerance; // snap rounding tolerance

@@ -18,7 +18,20 @@ using std::list;
 // constants
 namespace snapoly {
 	namespace constants {
-		const double DOUBLE_MAX = std::numeric_limits<double>::max(); // maximum value of type double
+		const double DOUBLE_MAX = 1e+15; // maximum value of type double, sometimes we also use *0.5 to avoid possible overflow when multiply the DOUBLE_MAX
+
+		/*
+		* DOUBLE_MAX
+		* This value corresponds to the maximum representable value in most systems using a 64-bit 
+		* representation, including those that conform to the IEEE 754 standard. 
+		* Since most modern computers and programming languages use this standard, 
+		* 1.79769e+308 is a widely accepted value.
+		* On the other hand, 1.34078e+154 corresponds to the maximum representable value 
+		* in a system that conforms to the IEEE 754 standard for binary floating-point arithmetic, 
+		* using a 64-bit representation, but with a different format than the one used in most modern systems. 
+		* This format is not as widely used today, so the maximum finite value of 1.34078e+154 is less common.
+		*/
+
 		const int NOT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
 		const double EPSILON = 1e-15; // epsilon: tolerance 1e-8 by default? or use a more accurate value such as 1e-15?
 	}

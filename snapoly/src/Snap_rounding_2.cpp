@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Snap_rounding_2.h"
 
+using namespace snapoly::constants;
+
 // is a point inside a CDTPolygon
 bool CDTPolygon::is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& pgn)
 {
@@ -248,7 +250,6 @@ void Snap_rounding_2::remove_dangles()
 void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 {
 	// process the geometry - update the constraintsWithID first and then alter the triangulation
-		// ===========================================================================================================
 	auto vertex_pair = m_et.vertices_of_edge(edgeOfVertexToVertex);
 	Vertex_handle va = vertex_pair.first;
 	Vertex_handle vb = vertex_pair.second;
@@ -509,6 +510,61 @@ double Snap_rounding_2::measure_distortions() const
 	cout << "area_diff: " << area_diff_percentage << '\n';	
 
 	return area_diff_percentage;
+}
+
+// check the minimum distance between <1> point to point <2> point to boundary
+double Snap_rounding_2::minimum_distance() const
+{
+	// minimum distance between point to point
+	auto minimum_vertex_to_vertex = m_et.find_minimum_vertex_to_vertex(m_squared_tolerance); // the squared_distance is returned
+	double minimum_squared_dist_vertex_to_vertex = std::get<2>(minimum_vertex_to_vertex);
+
+	// minimum distance between point to boundary
+	auto minimum_vertex_to_boundary = m_et.find_minimum_vertex_to_boundary(m_squared_tolerance); // the squared_distance is returned
+	double minimum_squared_dist_vertex_to_boundary = std::get<2>(minimum_vertex_to_boundary);
+
+	// check if no minimum is found
+	if (std::abs(minimum_squared_dist_vertex_to_vertex - DOUBLE_MAX) < EPSILON ||
+		std::abs(minimum_squared_dist_vertex_to_boundary - DOUBLE_MAX) < EPSILON) {
+		cout << "no minimum distance is found under the given tolerance: " << m_tolerance << '\n';
+		cout << "0 will be returned \n";
+		cout << "squared tolerance: " << m_squared_tolerance << '\n';
+		return 0;
+	}
+
+	// get the minimum squared distance
+	double minimum_squared_dist = std::min(minimum_squared_dist_vertex_to_vertex, minimum_squared_dist_vertex_to_boundary);
+
+	return std::sqrt(minimum_squared_dist);
+}
+
+// find the distances between point to point / boundary and store them in a priority queue
+void Snap_rounding_2::find_tolerance(std::priority_queue<double>& lengthQueue)
+{
+	// vertex and vertex are connected by edges
+	for (auto& edge : m_et.finite_edges()) {
+		auto computed_squared_length = m_et.squared_length(edge);
+		if(computed_squared_length + EPSILON < m_squared_tolerance)
+			lengthQueue.push(std::sqrt(computed_squared_length));
+	}
+
+	// vertex to boundary - can be a vertex to another polygon's boundary or to itself's boundary
+	// the distance of vertex to boundary is defined as the distance between a capturing vertex and 
+	// the constrained sliver base in a sliver triangle
+	// a sliver triangle is a triangle ONLY has one constrained sliver base
+	// the other two edges must not be sliver edges (whether they are constrained or not)
+	for (auto& face : m_et.finite_face_handles()) {
+
+		// find the sliver constrained triangle
+		std::pair<bool, int> is_sliver = m_et.is_sliver_triangle(face, m_squared_tolerance); // pair<bool, int>
+
+		// if a sliver constrained triangle is found
+		if (is_sliver.first) {
+			auto computed_squared_height = m_et.squared_height(face, is_sliver.second); // computed_height is positive
+			if(computed_squared_height + EPSILON < m_squared_tolerance)
+				lengthQueue.push(std::sqrt(computed_squared_height));
+		}
+	} // end for: all finite faces in the triangulation
 }
 
 // print a Polygon_2

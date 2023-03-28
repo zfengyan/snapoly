@@ -21,6 +21,7 @@ int main()
 
 	// Snap rounding
 	Snap_rounding_2 sr;
+	sr.set_tolerance(0.006);
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -30,10 +31,7 @@ int main()
 
 	// find the minimum tolerance ---------------------------------------------
 	std::priority_queue<double> lengthQueue;
-	for (auto const& e : sr.triangulation().finite_edges()) {
-		auto currentSquaredLength = sr.triangulation().squared_length(e);
-		lengthQueue.push(std::sqrt(currentSquaredLength));
-	}
+	sr.find_tolerance(lengthQueue);
 	while (!lengthQueue.empty()) {
 		cout << lengthQueue.top() << '\n';
 		lengthQueue.pop();
@@ -43,6 +41,9 @@ int main()
 	//sr.set_tolerance(1.50659e-05); // 9.50158e-06
 
 	//sr.snap_rounding();
+	double minimum_distance = sr.minimum_distance();
+	cout << "tolerance: " << sr.tolerance() << " minimum distance under the current tolerance "
+		<< minimum_distance << '\n';
 
 	//io::export_to_gpkg(tri_file, sr.triangulation());
 
