@@ -45,6 +45,19 @@ struct Constraint {
 };
 
 
+// class for hash function - unordered_set<Constraint>
+class ConstraintHashFunction {
+public:
+	// id is returned as hash function
+	size_t operator()(const Constraint& t) const
+	{
+		//return t.id;
+		return 0;
+		// return x_hash ^ (y_hash << 1)
+	}
+};
+
+
 // CDTPolygon class
 // represent for a 2D polygon with hole(s) - similar like Polygon_with_holes_2<Kernel>
 class CDTPolygon
@@ -146,9 +159,10 @@ public:
 	Snap_rounding_2():
 		m_tolerance(0.3),
 		m_squared_tolerance(0.09),
-		m_constraintsWithInfo(),
-		m_polygons(),
 		m_et(),
+		m_constraintsWithInfo(),
+		m_constraintsUnorderedSet(),
+		m_polygons(),
 		m_result_polygons()
 	{
 		cout << "default snap rounding tolerance is: " << m_tolerance << '\n';
@@ -305,12 +319,18 @@ public:
 
 protected:
 	/*
+	* the sequence of member declarations must be aligned with the constructors
 	*/
 	double m_tolerance; // snap rounding tolerance
 	double m_squared_tolerance; // squared tolerance
-	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
-	vector<CDTPolygon> m_polygons; // store the OGRPolygons
+
 	Enhanced_triangulation m_et; // the enhanced constrained Delaunay triangulation 
+
+	// the foloowing two should be updated simultaneously
+	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
+	unordered_set<Constraint, ConstraintHashFunction> m_constraintsUnorderedSet; // uniquely store the constraint (common boundaries will have multiple ids)
+
+	vector<CDTPolygon> m_polygons; // store the OGRPolygons
 	vector<CDTPolygon> m_result_polygons; // store the polygons recovered from the constraints with info list
 };
 
