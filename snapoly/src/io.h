@@ -29,6 +29,13 @@ public:
 	* the function accepts a const reference of OGRFeatureUniquePtr and based on which the associated information is added
 	* and a OGRPolygon* pointer indicating which OGRPolygon is added
 	* poFeature is used for adding the associated information
+	* 
+	* Coordinates shifting:
+	* the original coordinates are usually very large under a certain CRS
+	* thus we firstly shift the coordinates as such:
+	* x = x - minX
+	* y = y - minY
+	* where minX and minY are the minimum x and y values in a layer 
 	*/
 	static void add_OGRPolygon_to_polygons(
 		const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature,

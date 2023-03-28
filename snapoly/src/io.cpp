@@ -53,7 +53,14 @@ void io::add_OGRPolygon_to_polygons(
 
 	for (int i = NumOuterPoints; i > 0; --i)
 	{
-		polygon.outer_boundary().push_back(CDTPoint(poOuterRing->getX(i), poOuterRing->getY(i)));
+		double x = poOuterRing->getX(i);
+		double y = poOuterRing->getY(i);
+
+		// shift the coordinates
+		x -= minX;
+		y -= minY;
+		
+		polygon.outer_boundary().push_back(CDTPoint(x, y));
 		//cout << poOuterRing->getX(i) << "-" << poOuterRing->getY(i) << '\n';
 	}
 
@@ -69,8 +76,16 @@ void io::add_OGRPolygon_to_polygons(
 		int NumInnerPoints = innerRing->getNumPoints() - 1; // first point is the same as the last point
 		for (int j = NumInnerPoints; j > 0; --j) // degenerate cases: NumOfouterRingPoints < 3?
 		{
-			hole.push_back(CDTPoint(innerRing->getX(j), innerRing->getY(j)));
-		}polygon.holes().push_back(hole);
+			double x = poOuterRing->getX(i);
+			double y = poOuterRing->getY(i);
+
+			// shift the coordinates
+			x -= minX;
+			y -= minY;
+
+			hole.push_back(CDTPoint(x, y));
+		}
+		polygon.holes().push_back(hole);
 		//sr.print_polygon_2(hole);
 		hole.clear();
 	}
@@ -200,6 +215,8 @@ void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>
 		cout << "extent: \n";
 		cout << "min X: " << extentOfLayer.MinX << '\t' << "max X: " << extentOfLayer.MaxX << '\n';
 		cout << "min Y: " << extentOfLayer.MinY << '\t' << "max Y: " << extentOfLayer.MaxY << '\n';
+		minX = extentOfLayer.MinX;
+		minY = extentOfLayer.MinY;
 		// get the extent
 
 
