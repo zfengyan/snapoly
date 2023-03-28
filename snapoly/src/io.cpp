@@ -309,7 +309,7 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 		return;
 	}
 	// field for layer - edges
-	OGRFieldDefn out_field_edges("ID", OFTString);
+	OGRFieldDefn out_field_edges("osm_id", OFTString);
 	out_field_edges.SetWidth(32);
 	if (out_layer_edges->CreateField(&out_field_edges) != OGRERR_NONE) {
 		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
@@ -321,12 +321,12 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_edges->GetLayerDefn());
-		ogr_feature->SetField("ID", c.idCollection[1].c_str()); // set attribute
+		ogr_feature->SetField("osm_id", c.idCollection[1].c_str()); // set attribute
 
 		// - create local geometry object
 		OGRLineString ogr_line;
-		ogr_line.addPoint(c.p0.x(), c.p0.y());
-		ogr_line.addPoint(c.p1.x(), c.p1.y());
+		ogr_line.addPoint(c.p0.x() + minX, c.p0.y() + minY);
+		ogr_line.addPoint(c.p1.x() + minX, c.p1.y() + minY);
 
 		// - set geometry
 		ogr_feature->SetGeometry(&ogr_line);
@@ -508,7 +508,7 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 		return;
 	}
 	// field for layer - polygons
-	OGRFieldDefn out_field_polygons("id", OFTString);
+	OGRFieldDefn out_field_polygons("osm_id", OFTString);
 	out_field_polygons.SetWidth(32);
 	if (out_layer_polygons->CreateField(&out_field_polygons) != OGRERR_NONE) {
 		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
@@ -520,7 +520,7 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_polygons->GetLayerDefn());
-		ogr_feature->SetField("id", pgn.id().c_str()); // set attribute
+		ogr_feature->SetField("osm_id", pgn.id().c_str()); // set attribute
 
 		// - create local geometry object
 		OGRPolygon* ogr_polygon = new OGRPolygon; // using new keyword - need to be deleted by using `delete` later
@@ -528,7 +528,7 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 		// add exterior ring
 		OGRLinearRing* ogr_exterior_ring = new OGRLinearRing;
 		for (auto iter = pgn.outer_boundary().vertices_begin(); iter != pgn.outer_boundary().vertices_end(); ++iter) { // add points of exterior ring
-			ogr_exterior_ring->addPoint(CGAL::to_double(iter->x()), CGAL::to_double(iter->y()));
+			ogr_exterior_ring->addPoint(CGAL::to_double(iter->x() + minX), CGAL::to_double(iter->y() + minY));
 		}ogr_exterior_ring->closeRings(); // ogr ring must be closed
 		ogr_polygon->addRingDirectly(ogr_exterior_ring); // assumes ownership, no need to use 'delete' key word on the created (OGR) ring
 
@@ -537,7 +537,7 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 			for (auto const& hole : pgn.holes()) { // add each interior ring (hole)				
 				OGRLinearRing* ogr_interior_ring = new OGRLinearRing; // for each hole, there must be a corresponding OGRLinearRing
 				for (auto iter = hole.vertices_begin(); iter != hole.vertices_end(); ++iter) {
-					ogr_interior_ring->addPoint(CGAL::to_double(iter->x()), CGAL::to_double(iter->y()));
+					ogr_interior_ring->addPoint(CGAL::to_double(iter->x() + minX), CGAL::to_double(iter->y() + minY));
 				}ogr_interior_ring->closeRings();
 				ogr_polygon->addRingDirectly(ogr_interior_ring);
 			}
@@ -734,10 +734,11 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 		OGRPolygon* ogr_polygon = new OGRPolygon; // using new keyword
 		OGRLinearRing* ogr_ring = new OGRLinearRing;
 		//std::cout << "--check: construct ring" << '\n';
-		ogr_ring->addPoint(CGAL::to_double(fh->vertex(0)->point().x()), CGAL::to_double(fh->vertex(0)->point().y()));
-		ogr_ring->addPoint(CGAL::to_double(fh->vertex(1)->point().x()), CGAL::to_double(fh->vertex(1)->point().y()));
-		ogr_ring->addPoint(CGAL::to_double(fh->vertex(2)->point().x()), CGAL::to_double(fh->vertex(2)->point().y()));
-		ogr_ring->addPoint(CGAL::to_double(fh->vertex(0)->point().x()), CGAL::to_double(fh->vertex(0)->point().y()));
+		// when exporting, add minX and minY to export the coordinates in the original extent
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(0)->point().x() + minX), CGAL::to_double(fh->vertex(0)->point().y() + minY));
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(1)->point().x() + minX), CGAL::to_double(fh->vertex(1)->point().y() + minY));
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(2)->point().x() + minX), CGAL::to_double(fh->vertex(2)->point().y() + minY));
+		ogr_ring->addPoint(CGAL::to_double(fh->vertex(0)->point().x() + minX), CGAL::to_double(fh->vertex(0)->point().y() + minY));
 		ogr_ring->closeRings(); // ogr ring must be closed
 		ogr_polygon->addRingDirectly(ogr_ring); // assumes ownership, no need to use 'delete' key word of created OGRLinearRing
 		//std::cout << "--check: finish construct ring" << '\n';
@@ -796,13 +797,13 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn());
 		ogr_feature->SetField("type", "point 2D"); // set attribute
-		ogr_feature->SetField("X", CGAL::to_double(vh->point().x())); // set attribute
-		ogr_feature->SetField("Y", CGAL::to_double(vh->point().y())); // set attribute
+		ogr_feature->SetField("X", CGAL::to_double(vh->point().x() + minX)); // set attribute
+		ogr_feature->SetField("Y", CGAL::to_double(vh->point().y() + minY)); // set attribute
 
 		// - create local geometry object
 		OGRPoint ogr_pt;
-		ogr_pt.setX(CGAL::to_double(vh->point().x()));
-		ogr_pt.setY(CGAL::to_double(vh->point().y()));
+		ogr_pt.setX(CGAL::to_double(vh->point().x() + minX));
+		ogr_pt.setY(CGAL::to_double(vh->point().y() + minY));
 
 		// - set geometry
 		ogr_feature->SetGeometry(&ogr_pt);
@@ -851,10 +852,10 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 			// get the custom edge with (x1, y1, x2, y2)
 			int cw = CDT::cw(i);
 			int ccw = CDT::ccw(i);
-			edge.x1 = CGAL::to_double(fh->vertex(cw)->point().x());
-			edge.y1 = CGAL::to_double(fh->vertex(cw)->point().y());
-			edge.x2 = CGAL::to_double(fh->vertex(ccw)->point().x());
-			edge.y2 = CGAL::to_double(fh->vertex(ccw)->point().y());
+			edge.x1 = CGAL::to_double(fh->vertex(cw)->point().x() + minX);
+			edge.y1 = CGAL::to_double(fh->vertex(cw)->point().y() + minY);
+			edge.x2 = CGAL::to_double(fh->vertex(ccw)->point().x() + minX);
+			edge.y2 = CGAL::to_double(fh->vertex(ccw)->point().y() + minY);
 			if (std::find(edges.begin(), edges.end(), edge) == edges.end())
 				edges.emplace_back(edge); // if not existed
 		} // for each face - traverse its three vertices and get the edge opposite to vertex i
