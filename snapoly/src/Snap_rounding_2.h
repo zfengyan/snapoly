@@ -37,6 +37,11 @@ struct Constraint {
 		return !(*this == rhs);
 	}
 
+	// compare function, for constraintsSet
+	bool operator<(const Constraint& other) const {
+		return (*this != other);
+	}
+
 };
 
 
@@ -299,6 +304,8 @@ public:
 	const double& tolerance()const { return m_tolerance; }
 
 protected:
+	/*
+	*/
 	double m_tolerance; // snap rounding tolerance
 	double m_squared_tolerance; // squared tolerance
 	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached

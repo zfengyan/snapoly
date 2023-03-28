@@ -21,7 +21,7 @@ int main()
 
 	// Snap rounding
 	Snap_rounding_2 sr;
-	sr.set_tolerance(0.2);
+	sr.set_tolerance(0.0);
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -61,6 +61,20 @@ int main()
 
 
 	// -----------------------------------------------------------------------------------------
+
+	std::set<Constraint> constraintsSet;
+
+	Constraint c1(CDTPoint(0.0, 0.0), CDTPoint(1.0, 0.0));
+	Constraint c2(CDTPoint(2.0, 0.0), CDTPoint(0.0, 0.0));
+
+	constraintsSet.insert(c1);
+	constraintsSet.insert(c2);
+
+	cout << constraintsSet.size() << '\n';
+
+	auto it = constraintsSet.find(c1);
+	if (it != constraintsSet.end())
+		cout << "found!\n";
 
 
 	return 0;
