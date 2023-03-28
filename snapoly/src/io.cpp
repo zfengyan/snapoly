@@ -1,10 +1,14 @@
 #include "pch.h"
 #include "io.h"
 
+// definition of static class member
+// definition allows the linker to find the memory space for the io::spatialReference variable.
+OGRSpatialReference* io::m_spatialReference = nullptr;
+
 // add OGRPolygon to polygons vector
-void snapoly::io::add_OGRPolygon_to_polygons(
-	const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature, 
-	OGRPolygon* poOGRPolygon, 
+void io::add_OGRPolygon_to_polygons(
+	const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature,
+	OGRPolygon* poOGRPolygon,
 	vector<CDTPolygon>& polygons)
 {
 	// nullptr check
@@ -69,9 +73,7 @@ void snapoly::io::add_OGRPolygon_to_polygons(
 	// check
 	//for (auto const& hole : polygon.holes())sr.print_polygon_2(hole);
 
-
 	// now let's store the fields (attributes)
-
 
 	// cout << "Field name: " << oFeature->GetDefnRef()->GetName() << '\n'; // this is the layer name
 	for (auto&& oField : *poFeature) // rvalue reference?
@@ -120,9 +122,9 @@ void snapoly::io::add_OGRPolygon_to_polygons(
 } // end of function
 
 // add OGRPolygon to polygons vector
-void snapoly::io::add_OGRMultiPolygon_to_polygons(
-	const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature, 
-	OGRMultiPolygon* poOGRMultiPolygon, 
+void io::add_OGRMultiPolygon_to_polygons(
+	const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature,
+	OGRMultiPolygon* poOGRMultiPolygon,
 	vector<CDTPolygon>& polygons)
 {
 	// nullptr check
@@ -149,8 +151,11 @@ void snapoly::io::add_OGRMultiPolygon_to_polygons(
 }
 
 // add polygons from the input file
-void snapoly::io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>& polygons)
+void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>& polygons)
 {
+	cout << "reading polygons ... \n";
+
+
 	GDALAllRegister();
 
 
@@ -177,21 +182,23 @@ void snapoly::io::add_polygons_from_input_file(const char* input_file, vector<CD
 		// get SpatialRef - will be saved and used for creating output files - how to store it?
 		OGRSpatialReference* tmp = poLayer->GetSpatialRef();
 		if (tmp != nullptr) {
-			char* spatialReference = nullptr;
-			tmp->exportToWkt(&spatialReference);
-			cout << "SpatialRef: " << spatialReference << '\n';
+			m_spatialReference = tmp->Clone(); // store the CRS information
 		}
 
 
 		long long numberOfPolygons = poLayer->GetFeatureCount(true); // true some implementations will actually scan the entire layer once to count objects.
-		cout << "number of polygons: " << numberOfPolygons << '\n';
+		cout << "\tnumber of polygons: " << numberOfPolygons << '\n';
 		polygons.reserve(polygons.size() + numberOfPolygons);
-		cout << "number of fields: " << poLayer->GetLayerDefn()->GetFieldCount() << '\n';
+		cout << "\tnumber of fields: " << poLayer->GetLayerDefn()->GetFieldCount() << '\n';
 
 
 		// Save the polygons, field names and types
+		// int countFeature = 0; // for Debug
 		for (const auto& poFeature : poLayer) // traverse all the features in one layer
 		{
+			//++countFeature;
+			//cout << countFeature << '\n'; // for Debug
+
 			OGRGeometry* poGeometry = poFeature->GetGeometryRef();
 			if (poGeometry == nullptr) {
 				std::cerr << "Warning: couldn't get the geometry of feature: \t" << poFeature->GetFID() << '\n';
@@ -228,10 +235,12 @@ void snapoly::io::add_polygons_from_input_file(const char* input_file, vector<CD
 
 	GDALClose(poDataset); // close the dataset
 
+	cout << "done\n";
+
 }
 
 // output boundaries
-void snapoly::io::export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo)
+void io::export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo)
 {
 	GDALAllRegister();
 
@@ -266,7 +275,7 @@ void snapoly::io::export_to_gpkg(const char* filename, const list<Constraint>& c
 	// add constraints ---------------------------------------------------------------------------------------------------------
 	std::cout << "-- output gpkg, write constraints with info" << '\n';
 	// get layer for Edges
-	OGRLayer* out_layer_edges = out_dataset->CreateLayer("edges");
+	OGRLayer* out_layer_edges = out_dataset->CreateLayer("edges", m_spatialReference);
 	if (out_layer_edges == nullptr) {
 		std::cerr << "Error: couldn't create layer - edges." << '\n';
 		return;
@@ -313,8 +322,8 @@ void snapoly::io::export_to_gpkg(const char* filename, const list<Constraint>& c
 }
 
 // build output polygons from constraints
-void snapoly::io::build_polygons_from_constraints(
-	list<Constraint>& constraintsWithInfo, 
+void io::build_polygons_from_constraints(
+	list<Constraint>& constraintsWithInfo,
 	vector<CDTPolygon>& resPolygonsVec)
 {
 	// build an unordered_map and use the id of constraints as key, the corresponding constraints as value
@@ -395,7 +404,7 @@ void snapoly::io::build_polygons_from_constraints(
 			const Coordinate& coord = exteriorCoordSeq->getAt(i);
 			resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
 			//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
-		} 
+		}
 		// add exterior points --------------------------------------------------------------------------------------------
 
 		// when adding interior rings, the sequence of interior rings must be oriented CW not CCW
@@ -430,7 +439,7 @@ void snapoly::io::build_polygons_from_constraints(
 }
 
 // export the res polygons to gpkg file
-void snapoly::io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec)
+void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec)
 {
 	GDALAllRegister();
 
@@ -465,7 +474,7 @@ void snapoly::io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPo
 	// add faces ------------------------------------------------------------------------------------------------
 	std::cout << "-- output gpkg, write polygons" << '\n';
 	// get layer for polygons
-	OGRLayer* out_layer_polygons = out_dataset->CreateLayer("polygons");
+	OGRLayer* out_layer_polygons = out_dataset->CreateLayer("polygons", m_spatialReference);
 	if (out_layer_polygons == nullptr) {
 		std::cerr << "Error: couldn't create layer - polygons." << '\n';
 		return;
@@ -519,90 +528,90 @@ void snapoly::io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPo
 
 	} // end for: polygons
 	// add faces ------------------------------------------------------------------------------------------------
-	
-	
-	
+
+
+
 	// add vertices ------------------------------------------------------------------------------------------------------
-	std::cout << "-- output gpkg, write polygon vertices" << '\n';
-	// get layer for vertices
-	OGRLayer* out_layer_vertices = out_dataset->CreateLayer("vertices");
-	if (out_layer_vertices == nullptr) {
-		std::cerr << "Error: couldn't create layer - vertices." << '\n';
-		return;
-	}
+	//std::cout << "-- output gpkg, write polygon vertices" << '\n';
+	//// get layer for vertices
+	//OGRLayer* out_layer_vertices = out_dataset->CreateLayer("vertices");
+	//if (out_layer_vertices == nullptr) {
+	//	std::cerr << "Error: couldn't create layer - vertices." << '\n';
+	//	return;
+	//}
 
-	// field for layer vertices - point type
-	OGRFieldDefn out_field_vertices_type("type", OFTString);
-	out_field_vertices_type.SetWidth(32);
-	if (out_layer_vertices->CreateField(&out_field_vertices_type) != OGRERR_NONE) {
-		std::cerr << "Error: Creating type field failed - layer vertices type" << '\n';
-		return;
-	}
+	//// field for layer vertices - point type
+	//OGRFieldDefn out_field_vertices_type("type", OFTString);
+	//out_field_vertices_type.SetWidth(32);
+	//if (out_layer_vertices->CreateField(&out_field_vertices_type) != OGRERR_NONE) {
+	//	std::cerr << "Error: Creating type field failed - layer vertices type" << '\n';
+	//	return;
+	//}
 
-	// field for layer vertices - point x coordinates
-	OGRFieldDefn out_field_vertices_x("X", OFTReal);
-	out_field_vertices_x.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
-	if (out_layer_vertices->CreateField(&out_field_vertices_x) != OGRERR_NONE) {
-		std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
-		return;
-	}
+	//// field for layer vertices - point x coordinates
+	//OGRFieldDefn out_field_vertices_x("X", OFTReal);
+	//out_field_vertices_x.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
+	//if (out_layer_vertices->CreateField(&out_field_vertices_x) != OGRERR_NONE) {
+	//	std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
+	//	return;
+	//}
 
-	// field for layer vertices - point y coordinates
-	OGRFieldDefn out_field_vertices_y("Y", OFTReal);
-	out_field_vertices_y.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
-	if (out_layer_vertices->CreateField(&out_field_vertices_y) != OGRERR_NONE) {
-		std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
-		return;
-	}
+	//// field for layer vertices - point y coordinates
+	//OGRFieldDefn out_field_vertices_y("Y", OFTReal);
+	//out_field_vertices_y.SetPrecision(10); // create a real field with a precision of 10 decimal places - can store values with up to 10 digits after the decimal point.
+	//if (out_layer_vertices->CreateField(&out_field_vertices_y) != OGRERR_NONE) {
+	//	std::cerr << "Error: Creating type field failed - layer vertices x coordinates" << '\n';
+	//	return;
+	//}
 
-	// add vertices
-	for (auto const& pgn : resPolygonsVec) {
+	//// add vertices
+	//for (auto const& pgn : resPolygonsVec) {
 
-		// add points of the exterior ring
-		for (auto iter = pgn.outer_boundary().vertices_begin(); iter != pgn.outer_boundary().vertices_end(); ++iter) { // add points of exterior ring
-			OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn()); // - create local feature and set attribute (if any)
-			ogr_feature->SetField("type", "point 2D"); // set attribute
-			ogr_feature->SetField("X", CGAL::to_double(iter->x())); // set attribute
-			ogr_feature->SetField("Y", CGAL::to_double(iter->y())); // set attribute
+	//	// add points of the exterior ring
+	//	for (auto iter = pgn.outer_boundary().vertices_begin(); iter != pgn.outer_boundary().vertices_end(); ++iter) { // add points of exterior ring
+	//		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn()); // - create local feature and set attribute (if any)
+	//		ogr_feature->SetField("type", "point 2D"); // set attribute
+	//		ogr_feature->SetField("X", CGAL::to_double(iter->x())); // set attribute
+	//		ogr_feature->SetField("Y", CGAL::to_double(iter->y())); // set attribute
 
-			OGRPoint ogr_pt; // create local geometry object
-			ogr_pt.setX(CGAL::to_double(iter->x()));
-			ogr_pt.setY(CGAL::to_double(iter->y()));
-			ogr_feature->SetGeometry(&ogr_pt); // set geometry
+	//		OGRPoint ogr_pt; // create local geometry object
+	//		ogr_pt.setX(CGAL::to_double(iter->x()));
+	//		ogr_pt.setY(CGAL::to_double(iter->y()));
+	//		ogr_feature->SetGeometry(&ogr_pt); // set geometry
 
-			// - create feature in the file
-			if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
-				std::cout << "Error: couldn't create feature." << '\n';
-				return;
-			}
-			OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
-		}
+	//		// - create feature in the file
+	//		if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
+	//			std::cout << "Error: couldn't create feature." << '\n';
+	//			return;
+	//		}
+	//		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+	//	}
 
-		// add points of the interior ring
-		if (pgn.has_holes()) {
-			for (auto const& hole : pgn.holes()) {
-				for (auto iter = hole.vertices_begin(); iter != hole.vertices_end(); ++iter) {
-					OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn()); // - create local feature and set attribute (if any)
-					ogr_feature->SetField("type", "point 2D"); // set attribute
-					ogr_feature->SetField("X", CGAL::to_double(iter->x())); // set attribute
-					ogr_feature->SetField("Y", CGAL::to_double(iter->y())); // set attribute
+	//	// add points of the interior ring
+	//	if (pgn.has_holes()) {
+	//		for (auto const& hole : pgn.holes()) {
+	//			for (auto iter = hole.vertices_begin(); iter != hole.vertices_end(); ++iter) {
+	//				OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn()); // - create local feature and set attribute (if any)
+	//				ogr_feature->SetField("type", "point 2D"); // set attribute
+	//				ogr_feature->SetField("X", CGAL::to_double(iter->x())); // set attribute
+	//				ogr_feature->SetField("Y", CGAL::to_double(iter->y())); // set attribute
 
-					OGRPoint ogr_pt; // create local geometry object
-					ogr_pt.setX(CGAL::to_double(iter->x()));
-					ogr_pt.setY(CGAL::to_double(iter->y()));
-					ogr_feature->SetGeometry(&ogr_pt); // set geometry
+	//				OGRPoint ogr_pt; // create local geometry object
+	//				ogr_pt.setX(CGAL::to_double(iter->x()));
+	//				ogr_pt.setY(CGAL::to_double(iter->y()));
+	//				ogr_feature->SetGeometry(&ogr_pt); // set geometry
 
-					// - create feature in the file
-					if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
-						std::cout << "Error: couldn't create feature." << '\n';
-						return;
-					}
-					OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
-				}
-			}
-		}
+	//				// - create feature in the file
+	//				if (out_layer_vertices->CreateFeature(ogr_feature) != OGRERR_NONE) {
+	//					std::cout << "Error: couldn't create feature." << '\n';
+	//					return;
+	//				}
+	//				OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
+	//			}
+	//		}
+	//	}
 
-	}
+	//}
 	// add vertices ------------------------------------------------------------------------------------------------------
 
 	// close dataset
@@ -614,7 +623,7 @@ void snapoly::io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPo
 }
 
 // export the triangulation to gpkg file
-void snapoly::io::export_to_gpkg(const char* filename, CDT& cdt)
+void io::export_to_gpkg(const char* filename, CDT& cdt)
 {
 	GDALAllRegister();
 
@@ -661,7 +670,7 @@ void snapoly::io::export_to_gpkg(const char* filename, CDT& cdt)
 	// add triangle faces ------------------------------------------------------------------------------------------------
 	std::cout << "-- output gpkg, write polygons" << '\n';
 	// get layer for polygons
-	OGRLayer* out_layer_polygons = out_dataset->CreateLayer("polygons");
+	OGRLayer* out_layer_polygons = out_dataset->CreateLayer("polygons", m_spatialReference);
 	if (out_layer_polygons == nullptr) {
 		std::cerr << "Error: couldn't create layer - polygons." << '\n';
 		return;
@@ -723,7 +732,7 @@ void snapoly::io::export_to_gpkg(const char* filename, CDT& cdt)
 	// add vertices ------------------------------------------------------------------------------------------------------
 	std::cout << "-- output gpkg, write vertices" << '\n';
 	// get layer for vertices
-	OGRLayer* out_layer_vertices = out_dataset->CreateLayer("vertices");
+	OGRLayer* out_layer_vertices = out_dataset->CreateLayer("vertices", m_spatialReference);
 	if (out_layer_vertices == nullptr) {
 		std::cerr << "Error: couldn't create layer - vertices." << '\n';
 		return;
@@ -783,7 +792,7 @@ void snapoly::io::export_to_gpkg(const char* filename, CDT& cdt)
 	// add edges ---------------------------------------------------------------------------------------------------------
 	std::cout << "-- output gpkg, write edges" << '\n';
 	// get layer for Edges
-	OGRLayer* out_layer_edges = out_dataset->CreateLayer("edges");
+	OGRLayer* out_layer_edges = out_dataset->CreateLayer("edges", m_spatialReference);
 	if (out_layer_edges == nullptr) {
 		std::cerr << "Error: couldn't create layer - edges." << '\n';
 		return;
@@ -855,4 +864,5 @@ void snapoly::io::export_to_gpkg(const char* filename, CDT& cdt)
 	// clean up
 	GDALDestroyDriverManager();
 }
+
 

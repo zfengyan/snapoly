@@ -15,15 +15,15 @@
 int main()
 {
 	// files
-	const char* input_file = R"(D:\snapoly\data\andorra.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\andorra_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\andorra_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\andorra_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Denhaag_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Denhaag_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Denhaag_res.gpkg)";
 
 	// Snap rounding
-	Snap_rounding_2 sr;	
+	Snap_rounding_2 sr;
 
-	snapoly::io::add_polygons_from_input_file(input_file, sr.polygons());
+	io::add_polygons_from_input_file(input_file, sr.polygons());
 
 	sr.insert_polygons_to_triangulation();
 
@@ -33,21 +33,24 @@ int main()
 
 	//sr.snap_rounding();
 
-	//snapoly::io::export_to_gpkg(tri_file, sr.triangulation());
+	//TODO:
+	//1. coordinates shifting
+	//2. when exporting to the GPKG file, attach the CRS information
 
-	//snapoly::io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	io::export_to_gpkg(tri_file, sr.triangulation());
+
+	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 
 	// -----------------------------------------------------------------------------------------
 
-	//TODO: check this function - building with holes
-	snapoly::io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
+	io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
 
-	snapoly::io::export_to_gpkg(res_file, sr.result_polygons());
+	io::export_to_gpkg(res_file, sr.result_polygons());
 
-	
-	
+
+
 
 	// -----------------------------------------------------------------------------------------
 
