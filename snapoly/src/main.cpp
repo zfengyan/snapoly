@@ -13,12 +13,11 @@
 
 int main()
 {
-	cout << "start\n";
-	// files
-	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Denhaag_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Denhaag_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Denhaag_res.gpkg)";
+	
+	const char* input_file = R"(D:\snapoly\data\netherlands\dencase.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\dencase_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\dencase_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\dencase_res.gpkg)";
 
 	// Snap rounding
 	Snap_rounding_2 sr;
@@ -40,15 +39,15 @@ int main()
 	}
 	// find the minimum tolerance ---------------------------------------------
 
-	sr.snap_rounding();
+	sr.snap_rounding(); 
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	//io::export_to_gpkg(tri_file, sr.triangulation());
+	io::export_to_gpkg(tri_file, sr.triangulation());
 
-	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 

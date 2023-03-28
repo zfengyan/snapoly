@@ -904,6 +904,9 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 
 	// clean up
 	GDALDestroyDriverManager();
+
+	cout << "file saved at: " << filename << '\n';
+
 }
 
 
