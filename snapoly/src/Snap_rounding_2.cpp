@@ -489,13 +489,26 @@ double Snap_rounding_2::measure_distortions() const
 		originalPolygons[poly.id()] = poly;
 
 	// calculate the area difference
-	double area_diff = 0;
+	double area_diff_sum = 0;
 	for (auto const& resPoly : m_result_polygons) {
 		const string& id = resPoly.id();
-		area_diff += std::abs(originalPolygons[id].area() - resPoly.area());
+		area_diff_sum += std::abs(originalPolygons[id].area() - resPoly.area());
 	}
 
-	return m_result_polygons.size() > snapoly::constants::EPSILON? (area_diff / m_result_polygons.size()) : 0;
+	// get the area sum of the input polygons
+	double area_original_sum = 0;
+	for (auto const& originalPoly : m_polygons) {
+		area_original_sum += originalPoly.area();
+	}
+
+	// get the preportion
+	double area_diff_percentage =
+		area_original_sum > snapoly::constants::EPSILON ?
+		(area_diff_sum / area_original_sum) : 0;
+
+	cout << "area_diff: " << area_diff_percentage << '\n';	
+
+	return area_diff_percentage;
 }
 
 // print a Polygon_2

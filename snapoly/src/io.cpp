@@ -394,12 +394,12 @@ void io::build_polygons_from_constraints(
 		* calls will return NULL.
 		* @return a collection of Polygons*/
 		std::vector<std::unique_ptr<GEOSPolygon>> polys = pgnizer.getPolygons();
-		cout << "polygon vector size: " << polys.size() << '\t';
-		cout << "has dangles? " << pgnizer.hasDangles() << '\n';
+		//cout << "polygon vector size: " << polys.size() << '\t';
+		//cout << "has dangles? " << pgnizer.hasDangles() << '\n';
 
 		// check
-		if (polys.size() != 1 || pgnizer.hasDangles())
-			cout << element.first << '\n';
+		//if (polys.size() != 1 || pgnizer.hasDangles())
+			//cout << element.first << '\n';
 		// check
 
 		// build resPolygon

@@ -14,10 +14,10 @@
 int main()
 {
 	// files
-	const char* input_file = R"(D:\snapoly\data\netherlands\dencase.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\dencase_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\dencase_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\dencase_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Denhaag_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Denhaag_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Denhaag_res.gpkg)";
 
 	// Snap rounding
 	Snap_rounding_2 sr;
@@ -28,17 +28,25 @@ int main()
 
 	sr.add_tag_to_triangulation();
 
+	// find the minimum tolerance ---------------------------------------------
+	std::priority_queue<double> lengthQueue;
+	for (auto const& e : sr.triangulation().finite_edges()) {
+		auto currentSquaredLength = sr.triangulation().squared_length(e);
+		lengthQueue.push(std::sqrt(currentSquaredLength));
+	}
+	while (!lengthQueue.empty()) {
+		cout << lengthQueue.top() << '\n';
+		lengthQueue.pop();
+	}
+	// find the minimum tolerance ---------------------------------------------
+
 	//sr.set_tolerance(1.50659e-05); // 9.50158e-06
 
 	//sr.snap_rounding();
 
-	//TODO:
-	//1. coordinates shifting
-	//2. evaluate matrics - area preportion
+	//io::export_to_gpkg(tri_file, sr.triangulation());
 
-	io::export_to_gpkg(tri_file, sr.triangulation());
-
-	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 
@@ -46,9 +54,9 @@ int main()
 
 	io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
 
-	io::export_to_gpkg(res_file, sr.result_polygons());
+	//io::export_to_gpkg(res_file, sr.result_polygons());
 
-
+	sr.measure_distortions();
 
 
 	// -----------------------------------------------------------------------------------------
