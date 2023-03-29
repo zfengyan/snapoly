@@ -377,10 +377,16 @@ void io::build_polygons_from_constraints(
 	unordered_map<string, vector<Constraint>> constraintsMap;
 
 	// populate the map
+	// one constraint may contain multiple more than one id indicating it is a common boundary
 	for (auto const& constraint : constraintsWithInfo) {
-		string id = constraint.idCollection[1];
-		constraintsMap[id].push_back(constraint);
-	}
+		auto number_of_id = constraint.idCollection.size();
+		if (number_of_id > 1) { // the idCollection[0] is "unknown"
+			for (int current_id = 1; current_id < number_of_id; ++current_id) {
+				const string& id = constraint.idCollection[current_id];
+				constraintsMap[id].push_back(constraint);
+			} // end for: all ids
+		} // end if: constraint.idCollection.size() > 1
+	} // end for: each constraint in the constraints with info list
 
 	// build CoordinateSequence for constraints with the same id
 	// Coordinate: (x, y), for each constraint two points -> two Coordinates objects
