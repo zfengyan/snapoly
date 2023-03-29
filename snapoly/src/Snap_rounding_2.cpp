@@ -549,7 +549,7 @@ void Snap_rounding_2::snap_rounding()
 
 		//Debug
 		//++count;
-		//if (count == 3)break;
+		//if (count == 5)break;
 		//Debug
 
 	} // end while: until no cases are found under given tolerance
