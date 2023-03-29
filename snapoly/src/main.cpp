@@ -25,7 +25,7 @@ int main()
 
 	// Snap rounding
 	Snap_rounding_2 sr;
-	sr.set_tolerance(0.1);
+	sr.set_tolerance(0.01);
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 

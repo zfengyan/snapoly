@@ -225,8 +225,8 @@ void Snap_rounding_2::add_tag_to_triangulation()
 		}
 
 		// Debug
-		++count;
-		cout << count << '\n';
+		//++count;
+		//cout << count << '\n';
 		// Debug
 
 	} // end for: polygons
