@@ -393,8 +393,8 @@ void io::build_polygons_from_constraints(
 	int count = 0; // Debug
 	for (auto& element : constraintsMap) {
 
-		//++count; // Debug
-		//cout << count << '\n'; // Debug
+		++count; // Debug
+		cout << count << '\n'; // Debug
 
 		vector<vector<Coordinate>> coordinates;
 

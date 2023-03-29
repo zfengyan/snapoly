@@ -15,14 +15,17 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Denhaag_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Denhaag_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Denhaag_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_res.gpkg)";
+
+	// Timer
+	Timer timer;
 
 	// Snap rounding
 	Snap_rounding_2 sr;
-	sr.set_tolerance(0.2);
+	sr.set_tolerance(0.1);
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -48,7 +51,7 @@ int main()
 
 	//io::export_to_gpkg(tri_file, sr.triangulation());
 
-	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 

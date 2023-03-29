@@ -81,6 +81,7 @@ void Snap_rounding_2::set_tolerance(double tolerance_param)
 // consider the boundaries of polygons as constraints and insert them to the triangulation
 void Snap_rounding_2::insert_polygons_to_triangulation()
 {
+	cout << "inserting polygons to triangulation ... \n";
 	for (auto const& pgn : m_polygons)
 	{
 		// insert exterior as constraints
@@ -102,6 +103,7 @@ void Snap_rounding_2::insert_polygons_to_triangulation()
 		}
 
 	}
+	cout << "done \n";
 }
 
 
@@ -179,6 +181,8 @@ void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CD
 // add tags to the triangulation
 void Snap_rounding_2::add_tag_to_triangulation()
 {
+	cout << "adding tags to triangulation ... \n";
+	
 	// if empty vector
 	if (m_polygons.size() == 0) {
 		std::cerr << "no polygons found, please check! \n";
@@ -187,6 +191,7 @@ void Snap_rounding_2::add_tag_to_triangulation()
 
 	// for each polygon, polygon itself should not be changed during the tagging
 	// the overlapping case is not handled here
+	int count = 0; // Debug
 	for (auto const& pgn : m_polygons)
 	{
 		std::size_t numExterior = static_cast<std::size_t>(pgn.number_of_exterior_points());
@@ -219,7 +224,14 @@ void Snap_rounding_2::add_tag_to_triangulation()
 			}
 		}
 
+		// Debug
+		++count;
+		cout << count << '\n';
+		// Debug
+
 	} // end for: polygons
+
+	cout << "done \n";
 
 }
 
@@ -490,9 +502,6 @@ void Snap_rounding_2::snap_rounding()
 {
 	cout << '\n';
 	cout << "snap rounding... \n";
-
-	// for counting the run time
-	Timer timer;
 
 	//Debug
 	int count = 0;
