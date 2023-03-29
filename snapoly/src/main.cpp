@@ -14,9 +14,9 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\dencase.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
 	const char* tri_file = R"(D:\snapoly\data\netherlands\dencase_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\dencase_boundaries.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Denhaag_boundaries.gpkg)";
 	const char* res_file = R"(D:\snapoly\data\netherlands\dencase_res.gpkg)";
 
 	// Snap rounding
@@ -39,13 +39,13 @@ int main()
 	}
 	// find the minimum tolerance ---------------------------------------------
 
-	sr.snap_rounding(); 
+	//sr.snap_rounding(); 
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	io::export_to_gpkg(tri_file, sr.triangulation());
+	//io::export_to_gpkg(tri_file, sr.triangulation());
 
 	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
@@ -53,11 +53,11 @@ int main()
 
 	// -----------------------------------------------------------------------------------------
 
-	io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
+	//io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
 
-	io::export_to_gpkg(res_file, sr.result_polygons());
+	//io::export_to_gpkg(res_file, sr.result_polygons());
 
-	sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
+	//sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
 
 
 	// -----------------------------------------------------------------------------------------

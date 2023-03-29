@@ -111,15 +111,16 @@ void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CD
 					Constraint c(va->point(), vb->point());
 
 					// check if the current constraint is present in the list
+					// if so we add the currrent id to it
 					auto it = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), c);
 					if (it != m_constraintsWithInfo.end()) {
-						cout << "a constraint is already present! \n";
-						cout << "the id is: " << it->idCollection[1] << '\n';
+						it->idCollection.push_back(currentFace->info().faceid_collection[1]);
 					}
-
-					// attach the tag info and add it to the constraintsWithID collection
-					c.idCollection.push_back(currentFace->info().faceid_collection[1]);
-					m_constraintsWithInfo.push_back(c);
+					else { // if the current constraint is not present yet
+						// attach the tag info and add it to the constraintsWithID collection
+						c.idCollection.push_back(currentFace->info().faceid_collection[1]);
+						m_constraintsWithInfo.push_back(c);
+					}			
 				}
 			} // end for: all three edges of the current face
 			// === tag the constrained edges of this face (if any) ===

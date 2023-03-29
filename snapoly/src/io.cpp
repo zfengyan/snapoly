@@ -295,10 +295,17 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 		std::cerr << "Error: couldn't create layer - edges." << '\n';
 		return;
 	}
-	// field for layer - edges
+	// field for layer - edges, the first id
 	OGRFieldDefn out_field_edges("osm_id", OFTString);
 	out_field_edges.SetWidth(32);
 	if (out_layer_edges->CreateField(&out_field_edges) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
+		return;
+	}
+	// for storing other ids - currently only support for at most two ids of a constraint
+	OGRFieldDefn out_field_edges_1("osm_multiple_id", OFTString);
+	out_field_edges_1.SetWidth(32);
+	if (out_layer_edges->CreateField(&out_field_edges_1) != OGRERR_NONE) {
 		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
 		return;
 	}
@@ -308,7 +315,17 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_edges->GetLayerDefn());
+
+		// for each constraint, the idCollection has a default value "unkown"
+		// if they are attached with an ID, then the id will be idCollection[1]
+		// if they have multiple IDs, then the idCollection.size() > 2
 		ogr_feature->SetField("osm_id", c.idCollection[1].c_str()); // set attribute
+
+		// if the constraint contains other id
+		// now only supports for at most two ids for a constraint
+		if (c.idCollection.size() > 2) {
+			ogr_feature->SetField("osm_multiple_id", c.idCollection[2].c_str()); // set attribute
+		}
 
 		// - create local geometry object
 		OGRLineString ogr_line;
