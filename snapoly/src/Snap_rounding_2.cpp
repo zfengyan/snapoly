@@ -382,11 +382,13 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 	Constraint cb(vb->point(), capturingVertex->point());
 
 	// get the id of the corresponding constraint in the constraintWithInfo and attach it to new constraints with info
+	// since the constraint can have multiple ids, we assign all the ids
+	// e.g. refC contains ids: A and B, then ca and cb will also have the ids: A and B
 	for (auto& refC : m_constraintsWithInfo) {
 		if (c == refC) {
-			if (refC.idCollection.size() > 1) { // if refC has a tag
-				ca.idCollection.emplace_back(refC.idCollection[1]);
-				cb.idCollection.emplace_back(refC.idCollection[1]);
+			if (refC.idCollection.size() > 1) { // if refC has tag(s)
+				ca.idCollection = refC.idCollection;
+				cb.idCollection = refC.idCollection;
 			}
 		}
 	}
