@@ -309,6 +309,13 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
 		return;
 	}
+	// for stroing the id numbers
+	OGRFieldDefn out_field_edges_2("osm_id_numbers", OFTInteger);
+	out_field_edges_2.SetWidth(32);
+	if (out_layer_edges->CreateField(&out_field_edges_2) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer edges" << '\n';
+		return;
+	}
 
 	// add constraints with info to OGRLineString
 	for (auto const& c : constraintsWithInfo) {
@@ -326,6 +333,9 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 		if (c.idCollection.size() > 2) {
 			ogr_feature->SetField("osm_multiple_id", c.idCollection[2].c_str()); // set attribute
 		}
+
+		// store the number(amount) of id(s) - minus 1 because the default value "unknown"
+		ogr_feature->SetField("osm_id_numbers", (int)c.idCollection.size() - 1); // set attribute
 
 		// - create local geometry object
 		OGRLineString ogr_line;
