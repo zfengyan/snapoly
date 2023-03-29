@@ -491,6 +491,9 @@ void Snap_rounding_2::snap_rounding()
 	cout << '\n';
 	cout << "snap rounding... \n";
 
+	// for counting the run time
+	Timer timer;
+
 	//Debug
 	int count = 0;
 	//Debug

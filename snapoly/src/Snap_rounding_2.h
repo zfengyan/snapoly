@@ -5,6 +5,34 @@
 #include "Enhanced_constrained_delaunay_triangulation_2.h"
 
 
+/*
+* Timer struct for counting the run time
+* ATTENTION: Timer struct requires the c++ header file: #include<chrono>
+* this is provided by MSVC, version: 14.29.30133
+* and this may not suitable for gcc/g++ or other compilers like clang
+* if it is not compiled using other compilers, feel free to comment the Timer struct
+*/
+struct Timer //for counting the time
+{
+	std::chrono::time_point<std::chrono::steady_clock>start, end;
+	std::chrono::duration<float>duration;
+
+	Timer() //set default value
+	{
+		start = end = std::chrono::high_resolution_clock::now();
+		duration = end - start;
+	}
+
+	~Timer()
+	{
+		end = std::chrono::high_resolution_clock::now();
+		duration = end - start;
+
+		std::cout << "Time: " << duration.count() * 0.01666666 << "min\n"; // 1/60
+	}
+};
+
+
 // Constraint struct
 struct Constraint {
 	CDTPoint p0;

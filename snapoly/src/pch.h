@@ -7,6 +7,7 @@
 #include <queue> // for std::queue
 #include <tuple> // for std::tuple
 #include <algorithm> // for std::find
+#include <chrono> // for Timer
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // use exact_inexact kernel
 #include <CGAL/Constrained_Delaunay_triangulation_2.h> // CDT
