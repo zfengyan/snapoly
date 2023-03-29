@@ -11,6 +11,9 @@
 * this is provided by MSVC, version: 14.29.30133
 * and this may not suitable for gcc/g++ or other compilers like clang
 * if it is not compiled using other compilers, feel free to comment the Timer struct
+* 
+* The code and usage is inspired from an outstanding C++ series:
+* https://www.youtube.com/watch?v=oEx5vGNFrLk
 */
 struct Timer //for counting the time
 {
