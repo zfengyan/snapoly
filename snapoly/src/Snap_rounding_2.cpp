@@ -3,6 +3,33 @@
 
 using namespace snapoly::constants;
 
+// merge the id collections
+// the idCollection of rhs will be merged into the idCollection of *this
+// the idCollection of rhs will not be changed
+// e.g.
+// idCollection of *this: [A, B], idCollection of rhs: [B, C, D]
+// after the merge operation
+// idCollection of *this: [A, B, C, D]
+void Constraint::merge_id_collection(const Constraint& rhs)
+{
+	// unordered set for the ids of *this
+	unordered_set<string> idSet;
+
+	// populate the idSet, including the default value "default"
+	for (auto& id : idCollection) { // this->idCollection
+		idSet.insert(id);
+	}
+
+	// merge the ids from rhs.idCollection to idCollection (this->idCollection)
+	// if the id from rhs.idCollection is not present in idSet, add it
+	for (auto& rhs_id : rhs.idCollection) {
+		if (idSet.find(rhs_id) == idSet.end()) { // rhs_id is not in the idCollection
+			idCollection.push_back(rhs_id);
+		}
+	}
+}
+
+
 // is a point inside a CDTPolygon
 bool CDTPolygon::is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& pgn)
 {
@@ -26,6 +53,7 @@ bool CDTPolygon::is_point_inside_polygon(const CDTPoint& pt, const CDTPolygon& p
 	return ((outerSide == CGAL::ON_BOUNDED_SIDE) && (innerSide == CGAL::ON_UNBOUNDED_SIDE));
 }
 
+
 // calculate the area of a CDTPolygon
 double CDTPolygon::area() const
 {
@@ -40,6 +68,7 @@ double CDTPolygon::area() const
 	return std::abs(exteriorArea - interiorArea);
 }
 
+
 // set the tolerance
 void Snap_rounding_2::set_tolerance(double tolerance_param)
 {
@@ -47,6 +76,7 @@ void Snap_rounding_2::set_tolerance(double tolerance_param)
 	m_squared_tolerance = m_tolerance * m_tolerance;
 	cout << "the tolerance is set to: " << m_tolerance << '\n';
 }
+
 
 // consider the boundaries of polygons as constraints and insert them to the triangulation
 void Snap_rounding_2::insert_polygons_to_triangulation()
@@ -73,6 +103,7 @@ void Snap_rounding_2::insert_polygons_to_triangulation()
 
 	}
 }
+
 
 // add tag to one polygon
 void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CDTPolygon& refPgn)
@@ -144,6 +175,7 @@ void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CD
 	} // end while: while the queue is not empty
 }
 
+
 // add tags to the triangulation
 void Snap_rounding_2::add_tag_to_triangulation()
 {
@@ -190,6 +222,7 @@ void Snap_rounding_2::add_tag_to_triangulation()
 	} // end for: polygons
 
 }
+
 
 // remove dangles in the constraintsWithInfo list
 //   a   b           centroid
@@ -253,6 +286,7 @@ void Snap_rounding_2::remove_dangles()
 		}
 	}	
 }
+
 
 // snap close vertices
 void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
@@ -359,6 +393,7 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 
 }
 
+
 // snap close vertex to boundary
 void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int capturingVertexIndex)
 {
@@ -374,33 +409,65 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 
 	// update constraintsWithInfo first
 
-	// get the constraint of the constrained base
+	// constraint of the constrained base
 	Constraint c(va->point(), vb->point());
 
-	// add new constraints with info to the constraintsWithInfo
+	// constraints of the other two edges, note they can be constrained and already have id(s)
 	Constraint ca(va->point(), capturingVertex->point());
 	Constraint cb(vb->point(), capturingVertex->point());
 
-	// get the id of the corresponding constraint in the constraintWithInfo and attach it to new constraints with info
-	// since the constraint can have multiple ids, we assign all the ids
-	// e.g. refC contains ids: A and B, then ca and cb will also have the ids: A and B
-	for (auto& refC : m_constraintsWithInfo) {
-		if (c == refC) {
-			if (refC.idCollection.size() > 1) { // if refC has tag(s)
-				ca.idCollection = refC.idCollection;
-				cb.idCollection = refC.idCollection;
-			}
-		}
+	// first we find the constraint "c" in the constraints with info list
+	auto it = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), c);
+	if (it != m_constraintsWithInfo.end()) { // "c" is found and returned the pointer pointing to it
+		c.idCollection = it->idCollection; // populate the idCollection of c
+	}
+	
+
+	// then we use the same way to find the constraint "ca" and "cb"
+	// "ca" and "cb" may / may not be present in the constraints with info list
+	// if they are present, we merge the idCollection of c into their idCollections
+
+
+	// find "ca"
+	bool find_ca = false;
+	auto ita = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), ca);
+	if (ita != m_constraintsWithInfo.end()) { // if "ca" is found, merge the idCollection of c
+		ita->merge_id_collection(c);
+		find_ca = true;
+	} // if not found, the idCollection of ca only contains "unknown"
+
+	// find "cb"
+	bool find_cb = false;
+	auto itb = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), cb);
+	if (itb != m_constraintsWithInfo.end()) { // if "cb" is found, merge the idCollection of c
+		itb->merge_id_collection(c);
+		find_cb = true;
+	} // if not found, the idCollection of cb only contains "unknown"
+
+
+	// if ca / cb is not found - that means ca / cb is not constrained
+	// and it doesn't contain any id information
+	// we assign the idCollection of c, and we add it to the constraints with info list
+
+
+	if (!find_ca) {
+		ca.idCollection = c.idCollection;
+		m_constraintsWithInfo.push_back(ca);
 	}
 
-	// add ca and cb to constraintsWithInfo
-	m_constraintsWithInfo.push_back(ca);
-	m_constraintsWithInfo.push_back(cb);
+	if (!find_cb) {
+		cb.idCollection = c.idCollection;
+		m_constraintsWithInfo.push_back(cb);
+	}
 
-	// remove the constraint from the constraintsWithInfo
+	// remove the constraint "c" from the constraintsWithInfo
+	// the remove function of std::list is to use the argument's value to find and remove the element in the list
 	m_constraintsWithInfo.remove(c);
 
-	// modify the geometry of the triangulation
+
+	// after update of the constraiants with info list
+	// we modify the geometry of the triangulation
+
 
 	//cout << "processing geometry ... \n";
 	int ccw = sliverFace->ccw(capturingVertexIndex);
@@ -411,8 +478,12 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 	m_et.remove_constrained_edge(sliverFace, capturingVertexIndex);
 	//cout << "processing geometry done\n";
 
+	// at last step we remove possible dangles from the constraints with info list and the triangulation
+	// this step is important, and to avoid the possible cascading effects
+	// during the snap rounding
 	remove_dangles();
 }
+
 
 // snap rounding
 void Snap_rounding_2::snap_rounding()
@@ -478,7 +549,7 @@ void Snap_rounding_2::snap_rounding()
 
 		//Debug
 		//++count;
-		//if (count == 1)break;
+		//if (count == 3)break;
 		//Debug
 
 	} // end while: until no cases are found under given tolerance
@@ -488,6 +559,7 @@ void Snap_rounding_2::snap_rounding()
 	cout << "done \n";
 	cout << '\n';
 }
+
 
 // measure the distortions by area
 double Snap_rounding_2::measure_distortions() const
@@ -522,6 +594,7 @@ double Snap_rounding_2::measure_distortions() const
 	return area_diff_percentage;
 }
 
+
 // check the minimum distance between <1> point to point <2> point to boundary
 double Snap_rounding_2::minimum_distance() const
 {
@@ -547,6 +620,7 @@ double Snap_rounding_2::minimum_distance() const
 
 	return std::sqrt(minimum_squared_dist);
 }
+
 
 // find the distances between point to point / boundary and store them in a priority queue
 void Snap_rounding_2::find_tolerance(std::priority_queue<double>& lengthQueue)
@@ -577,6 +651,7 @@ void Snap_rounding_2::find_tolerance(std::priority_queue<double>& lengthQueue)
 	} // end for: all finite faces in the triangulation
 }
 
+
 // print a Polygon_2
 void snapoly::printer::print(const Polygon_2& polygon_2)
 {
@@ -587,3 +662,5 @@ void snapoly::printer::print(const Polygon_2& polygon_2)
 	}
 	cout << "======\n";
 }
+
+

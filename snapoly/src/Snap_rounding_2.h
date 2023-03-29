@@ -37,6 +37,15 @@ struct Constraint {
 		return !(*this == rhs);
 	}
 
+	// merge the id collections
+	// the idCollection of rhs will be merged into the idCollection of *this
+	// the idCollection of rhs will not be changed
+	// e.g.
+	// idCollection of *this: [A, B], idCollection of rhs: [B, C]
+	// after the merge operation
+	// idCollection of *this: [A, B, C]
+	void merge_id_collection(const Constraint& rhs);
+
 
 };
 
@@ -321,7 +330,7 @@ protected:
 
 	Enhanced_triangulation m_et; // the enhanced constrained Delaunay triangulation 
 
-	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
+	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached, constraints at common boundary will have multiple ids
 
 	vector<CDTPolygon> m_polygons; // store the OGRPolygons
 	vector<CDTPolygon> m_result_polygons; // store the polygons recovered from the constraints with info list

@@ -14,10 +14,10 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\dencase.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\dencase_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\dencase_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\dencase_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Denhaag.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Denhaag_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Denhaag_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Denhaag_res.gpkg)";
 
 	// Snap rounding
 	Snap_rounding_2 sr;
