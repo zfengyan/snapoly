@@ -279,6 +279,13 @@ public:
 
 
 	/*
+	* check if a constraint exists in the constrinats with info list
+	* if so return the existed constraint
+	*/
+
+
+
+	/*
 	* get polygons vector
 	*/
 	vector<CDTPolygon>& polygons() { return m_polygons; }
@@ -321,9 +328,7 @@ protected:
 
 	Enhanced_triangulation m_et; // the enhanced constrained Delaunay triangulation 
 
-	// the foloowing two should be updated simultaneously
 	list<Constraint> m_constraintsWithInfo; // store the constraints with the id attached
-	//unordered_set<Constraint, ConstraintHashFunction> m_constraintsUnorderedSet; // uniquely store the constraint (common boundaries will have multiple ids)
 
 	vector<CDTPolygon> m_polygons; // store the OGRPolygons
 	vector<CDTPolygon> m_result_polygons; // store the polygons recovered from the constraints with info list
