@@ -39,7 +39,7 @@ int main()
 	}
 	// find the minimum tolerance ---------------------------------------------
 
-	sr.snap_rounding(); 
+	sr.snap_rounding();
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';

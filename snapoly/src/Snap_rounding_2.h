@@ -279,13 +279,6 @@ public:
 
 
 	/*
-	* check if a constraint exists in the constrinats with info list
-	* if so return the existed constraint
-	*/
-
-
-
-	/*
 	* get polygons vector
 	*/
 	vector<CDTPolygon>& polygons() { return m_polygons; }
