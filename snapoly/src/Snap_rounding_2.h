@@ -7,7 +7,7 @@
 
 /*
 * Timer struct for counting the run time
-* ATTENTION: Timer struct requires the c++ header file: #include<chrono>
+* ATTENTION: Timer struct requires the C++ header file: #include<chrono>
 * this is provided by MSVC, version: 14.29.30133
 * and this may not suitable for gcc/g++ or other compilers like clang
 * if it is not compiled using other compilers, feel free to comment the Timer struct
