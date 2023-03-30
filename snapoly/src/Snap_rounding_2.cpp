@@ -211,7 +211,9 @@ void Snap_rounding_2::add_tag_to_triangulation()
 						bool centroid_inside = CDTPolygon::is_point_inside_polygon(centroid, pgn); // check inside
 						if (centroid_inside) {
 							starting_faces.push_back(static_cast<Face_handle>(fc));
-							break;
+							break; // comment this will allows to handle the overlapping area
+							// since a starting face can have all 3 edges constrained
+							// yet it still depends on the specific arrangements (see overlapping example)
 						}
 					}
 

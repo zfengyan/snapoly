@@ -524,7 +524,7 @@ void io::build_polygons_from_constraints(
 
 		} // end if: if there is(are) hole(s)
 		else {
-
+					
 			// <2> there is(are) no hole(s), there can be more than one polygon with the same tag, e.g. overlapping area
 	        // each exterior ring for each polygon
 			for (int i = 0; i < polys.size(); ++i) {
