@@ -388,6 +388,16 @@ void io::build_polygons_from_constraints(
 		} // end if: constraint.idCollection.size() > 1
 	} // end for: each constraint in the constraints with info list
 
+	//Debug
+	/*for (auto const& element : constraintsMap) {
+		cout << "id: " << element.first << '\n';
+		cout << "constraints number: " << element.second.size() << '\n';
+		for (auto const& constraint : element.second) {
+			cout << constraint.p0.x() + minX << '\n';
+		}cout << '\n';
+	}*/
+	//Debug
+
 	// build CoordinateSequence for constraints with the same id
 	// Coordinate: (x, y), for each constraint two points -> two Coordinates objects
 	int count = 0; // Debug
@@ -450,63 +460,109 @@ void io::build_polygons_from_constraints(
 			//cout << element.first << '\n';
 		// check
 
-		// build resPolygon
-		CDTPolygon resPolygon;
-		resPolygon.id() = element.first;
+		// if polygon(s) is(are) built
 
-		// if polys.size() > 1
-		// means the polygon contains hole(s)
-		// polys[0] is the exterior 
 
+		// if polys.size() > 1 --------------------------------------------------------------------------------------------------
+		// <1> the polygon contains hole(s), polys[0] is the exterior 
+		// <2> there are more than one polygon with the same tag, e.g. overlapping area
+		//  ___________a_______________
+		// |          /|               |   e.g. vertex a, c, b belong to A2
+		// |         / |               |        vertex a, b belong to A1
+		// |  A1   c/A1|      A2       |        face a-c-b belongs to A1 and A2, which makes it an overlapping area
+		// |        \A2|               |		there can be two possibilites when tagging -> see examples in the thesis
+		// |         \ |               |        when polygonizer form the polygon A2, there will be two polygons tagged as A2
+		// |__________\|_______________|
+		//             b
+		// ----------------------------------------------------------------------------------------------------------------------
+
+
+
+		// <1> the polygon contains hole(s), polys[0] is the exterior
 		// when adding exterior ring, align with the reading functions: add from backward
-		
-		//cout << count << '\n';
+		if (polys[0]->getNumInteriorRing()) { // if there is(are) hole(s)
+			
+			// build resPolygon
+			CDTPolygon resPolygon;
+			resPolygon.id() = element.first;
+											  									  
+			// exterior ring --------------------------------------------------------------------------------------------------
+			std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[0]->getExteriorRing()->getCoordinates();
+			std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
 
-		// exterior ring --------------------------------------------------------------------------------------------------
-		std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[0]->getExteriorRing()->getCoordinates();
-		std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
-		
-
-		// add points of exterior
-		for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
-			const Coordinate& coord = exteriorCoordSeq->getAt(i);
-			resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
-			//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
-		}
-		// add exterior points --------------------------------------------------------------------------------------------
-
-
-		// when adding interior rings, the sequence of interior rings must be oriented CW not CCW
-		// add interior rings ---------------------------------------------------------------------------------------------
-		for (std::size_t i = 0; i < polys[0]->getNumInteriorRing(); ++i) {
-			std::unique_ptr<CoordinateSequence> holeCoordSeq = polys[0]->getInteriorRingN(i)->getCoordinates();
-			//cout << "hole: " << i << '\n';
-			// represent a hole
-			Polygon_2 hole;
-			std::size_t numOfInteriorPoints = holeCoordSeq->getSize() - 1; // last point is the same as the first
-			for (std::size_t j = numOfInteriorPoints; j > 0; --j) {
-				const Coordinate& coord = holeCoordSeq->getAt(j);
-				hole.push_back(CDTPoint(coord.x, coord.y));
+			// add points of exterior
+			for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
+				const Coordinate& coord = exteriorCoordSeq->getAt(i);
+				resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
 				//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
-			} // end for: all points of an interior ring
+			}
+			// add exterior points --------------------------------------------------------------------------------------------
 
-			// add the hole to the CDTPolygon
-			resPolygon.holes().push_back(hole);
 
-		}// end for: all interior rings
-		// add interior points --------------------------------------------------------------------------------------------
+			// when adding interior rings, the sequence of interior rings must be oriented CW not CCW
+			// add interior rings ---------------------------------------------------------------------------------------------
+			for (std::size_t i = 0; i < polys[0]->getNumInteriorRing(); ++i) {
+				std::unique_ptr<CoordinateSequence> holeCoordSeq = polys[0]->getInteriorRingN(i)->getCoordinates();
+				
+				// represent a hole
+				Polygon_2 hole;
+				std::size_t numOfInteriorPoints = holeCoordSeq->getSize() - 1; // last point is the same as the first
+				for (std::size_t j = numOfInteriorPoints; j > 0; --j) {
+					const Coordinate& coord = holeCoordSeq->getAt(j);
+					hole.push_back(CDTPoint(coord.x, coord.y));
+					//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+				} // end for: all points of an interior ring
+
+				// add the hole to the CDTPolygon
+				resPolygon.holes().push_back(hole);
+
+			}// end for: all interior rings
+			// add interior points --------------------------------------------------------------------------------------------
+
+			// add built CDTPolygon to the vec
+			resPolygonsVec.push_back(resPolygon);
+
+		} // end if: if there is(are) hole(s)
+		else {
+
+			// <2> there is(are) no hole(s), there can be more than one polygon with the same tag, e.g. overlapping area
+	        // each exterior ring for each polygon
+			for (int i = 0; i < polys.size(); ++i) {
+				// only add exterior
+				// build resPolygon - for each poly
+				CDTPolygon resPolygon;
+				resPolygon.id() = element.first;
+
+				// exterior ring
+				std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[i]->getExteriorRing()->getCoordinates();
+				std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
+
+				// add points of exterior
+				for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
+					const Coordinate& coord = exteriorCoordSeq->getAt(i);
+					resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
+					//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+				}
+				//add exterior points
+
+				// add built CDTPolygon to the vec
+				resPolygonsVec.push_back(resPolygon);
+
+			} // end for: each poly in polys	
+
+		} // end else: no hole(s) in the polygon 
 		
+
 		// clean up
 		for (unsigned int i = 0; i < geoms.size(); i++) {
 			delete geoms[i];
 		}
 
-		//add the resPolygon to the vector
-		resPolygonsVec.push_back(resPolygon);
-
+		
 	} // end for: constraintsMap
 
 	cout << "done \n";
+
 }
 
 // export the res polygons to gpkg file
@@ -772,8 +828,13 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_polygons->GetLayerDefn());
-		//const char* contains_constrained_field = contains_constrained ? "true" : "false";
-		ogr_feature->SetField("id", fh->info().faceid_collection[0].c_str()); // set attribute - id
+		
+		// if the finite face belongs to a polygon, then faceid_collection.size() = 2
+		// if not faceid_collection.size() = 1
+		if(fh->info().faceid_collection.size() > 1)
+			ogr_feature->SetField("id", fh->info().faceid_collection[1].c_str()); // set attribute - id
+		else
+			ogr_feature->SetField("id", fh->info().faceid_collection[0].c_str());
 
 		// - create local geometry object
 		OGRPolygon* ogr_polygon = new OGRPolygon; // using new keyword

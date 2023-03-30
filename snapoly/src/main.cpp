@@ -15,10 +15,10 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\delftcase.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\delftcase_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\delftcase_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\delftcase_res.gpkg)";
 
 	// Timer
 	Timer timer;
@@ -43,15 +43,15 @@ int main()
 	}
 	// find the minimum tolerance ---------------------------------------------
 
-	sr.snap_rounding();
+	//sr.snap_rounding();
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	//io::export_to_gpkg(tri_file, sr.triangulation());
+	io::export_to_gpkg(tri_file, sr.triangulation());
 
-	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 

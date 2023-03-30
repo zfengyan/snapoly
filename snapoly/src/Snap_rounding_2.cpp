@@ -10,7 +10,7 @@ using namespace snapoly::constants;
 // idCollection of *this: [A, B], idCollection of rhs: [B, C, D]
 // after the merge operation
 // idCollection of *this: [A, B, C, D]
-void Constraint::merge_id_collection(const Constraint& rhs)
+void Constraint::merge_id_collection(const vector<string>& rhs_idCollection)
 {
 	// unordered set for the ids of *this
 	unordered_set<string> idSet;
@@ -22,7 +22,7 @@ void Constraint::merge_id_collection(const Constraint& rhs)
 
 	// merge the ids from rhs.idCollection to idCollection (this->idCollection)
 	// if the id from rhs.idCollection is not present in idSet, add it
-	for (auto& rhs_id : rhs.idCollection) {
+	for (auto& rhs_id : rhs_idCollection) {
 		if (idSet.find(rhs_id) == idSet.end()) { // rhs_id is not in the idCollection
 			idCollection.push_back(rhs_id);
 		}
@@ -144,10 +144,12 @@ void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CD
 					Constraint c(va->point(), vb->point());
 
 					// check if the current constraint is present in the list
-					// if so we add the currrent id to it
+					// if so we merge the currrent id to it 
+					// instead of directly adding - avoid repeatness, e.g. small overlapping area
 					auto it = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), c);
 					if (it != m_constraintsWithInfo.end()) {
-						it->idCollection.push_back(currentFace->info().faceid_collection[1]);
+						it->merge_id_collection(currentFace->info().faceid_collection);
+						//it->idCollection.push_back(currentFace->info().faceid_collection[1]);
 					}
 					else { // if the current constraint is not present yet
 						// attach the tag info and add it to the constraintsWithID collection
@@ -444,7 +446,7 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 	bool find_ca = false;
 	auto ita = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), ca);
 	if (ita != m_constraintsWithInfo.end()) { // if "ca" is found, merge the idCollection of c
-		ita->merge_id_collection(c);
+		ita->merge_id_collection(c.idCollection);
 		find_ca = true;
 	} // if not found, the idCollection of ca only contains "unknown"
 
@@ -452,7 +454,7 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 	bool find_cb = false;
 	auto itb = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), cb);
 	if (itb != m_constraintsWithInfo.end()) { // if "cb" is found, merge the idCollection of c
-		itb->merge_id_collection(c);
+		itb->merge_id_collection(c.idCollection);
 		find_cb = true;
 	} // if not found, the idCollection of cb only contains "unknown"
 

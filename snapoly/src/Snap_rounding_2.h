@@ -75,7 +75,7 @@ struct Constraint {
 	// idCollection of *this: [A, B], idCollection of rhs: [B, C]
 	// after the merge operation
 	// idCollection of *this: [A, B, C]
-	void merge_id_collection(const Constraint& rhs);
+	void merge_id_collection(const vector<string>& rhs_idCollection);
 
 
 };
