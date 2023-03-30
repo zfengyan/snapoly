@@ -525,8 +525,36 @@ void io::build_polygons_from_constraints(
 		} // end if: if there is(are) hole(s)
 		else {
 					
-			// <2> there is(are) no hole(s), there can be more than one polygon with the same tag, e.g. overlapping area
+			// <2> there is(are) no hole(s), there can be one or more than one polygon with the same tag, e.g. overlapping area
 	        // each exterior ring for each polygon
+			// we union them into one polygon - will union introduce cascading effects?
+
+			//vector<Polygon_2> polygons_with_same_info;
+			//vector<Polygon_with_holes_2> unions; // receive the union results
+
+			//for (int i = 0; i < polys.size(); ++i) { // for each poly in polys
+			//	// only add exterior
+			//	// build Polygon_2 - for each poly
+			//	Polygon_2 polygon;
+			//	
+			//	// exterior ring
+			//	std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[i]->getExteriorRing()->getCoordinates();
+			//	std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
+
+			//	// add points of exterior
+			//	for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
+			//		const Coordinate& coord = exteriorCoordSeq->getAt(i);
+			//		polygon.push_back(CDTPoint(coord.x, coord.y));
+			//		//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+			//	}
+			//	//add exterior points
+
+			//	// add built CDTPolygon to the vec
+			//	polygons_with_same_info.push_back(polygon);
+
+			//} // end for: each poly in polys	
+				
+
 			for (int i = 0; i < polys.size(); ++i) {
 				// only add exterior
 				// build resPolygon - for each poly
