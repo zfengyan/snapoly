@@ -43,13 +43,13 @@ int main()
 	}
 	// find the minimum tolerance ---------------------------------------------
 
-	//sr.snap_rounding();
+	sr.snap_rounding();
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	io::export_to_gpkg(tri_file, sr.triangulation());
+	//io::export_to_gpkg(tri_file, sr.triangulation());
 
 	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 

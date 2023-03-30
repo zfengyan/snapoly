@@ -453,12 +453,61 @@ void io::build_polygons_from_constraints(
 			continue; // continue to the next for loop
 		}
 
-		//cout << "polygon vector size: " << polys.size() << '\t';
-		//cout << "has dangles? " << pgnizer.hasDangles() << '\n';
-		// check
-		//if (polys.size() != 1 || pgnizer.hasDangles())
-			//cout << element.first << '\n';
-		// check
+
+
+		
+		// testing
+		cout << "polygon id: " << element.first << '\n';
+		cout << "polygon vector size: " << polys.size() << '\n';
+		cout << "number of holes? " << '\n';
+
+		//std::unique_ptr<CoordinateSequence> e;
+		std::unique_ptr<CoordinateSequence> e = polys[1]->getExteriorRing()->getCoordinates();
+		std::unique_ptr<CoordinateSequence> i = polys[0]->getInteriorRingN(0)->getCoordinates();
+
+		CoordinateSequence::reverse(e.get());
+
+		// if two are the same, that means polys[1] is the interior ring of polys[0]
+		// remove from the polys list
+		// e.g.
+		// polys: [e, i0, i1, i2, e']
+		// e and e' are two adjacent polygons with the same id
+		// i0, i1, i2 are interior holes of e
+		// we first traverse the polygons list and find the poly containing hole(s)
+		// let's say the polygon with hole(s) is e (can be e' also)
+		// then we can remove e from the list -- remove
+		// we get each interiorRing's CoordinateSequence of e, let's say its ei0, ei1, ei2
+		// we find the i0, i1, and i2 by comparing the coordinate sequence of ei0, ei1, ei2 (for example using a set)
+		// and we remove i0, i1, i2 from the list -- remove
+		// now we write e with its holes to CDTPolygon
+		// and we can perform similar steps to find other possible exterior ring and its interior rings in the list
+		// and after we have written all polygon with holes
+		// the rest elements in the list would be the exterior rings
+
+		cout << e->toString() << '\n';
+		cout << i->toString() << '\n';
+
+		//cout << "if same? " << (*e == *i) << '\n';
+		//CoordinateSequence::reverse(e.get());
+		//cout << "e: " << e->toString() << '\n';
+		//cout << "i: " << i->toString() << '\n';
+		//CoordinateSequence::equals(e.get(), i.get());
+		
+
+		for (auto const& poly : polys) {
+			//cout << poly->getNumInteriorRing() << '\n';
+			//const LinearRing e1 = *poly->getExteriorRing();
+			//const LinearRing e2 = *poly->getInteriorRingN(0);
+
+			
+			
+			//e1.equals(&e2);
+			
+			//cout << poly->getin
+		}
+		// testing	
+
+		
 
 		// if polygon(s) is(are) built
 
