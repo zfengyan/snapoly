@@ -497,19 +497,57 @@ void io::build_polygons_from_constraints(
 			resPolygonsVec.push_back(resPolygon);
 		}
 		else if(polysVec.size() > 1){ // could be polygon with holes or the overlap case
-			for (int i = 0; i < polysVec.size(); ++i) {
-				cout << "num of holes: " << polysVec[i]->getNumInteriorRing() << '\n';
-				std::unique_ptr<CoordinateSequence> e = polysVec[i]->getExteriorRing()->getCoordinates();
-				cout << *e << '\n';
-				cout << e->size() << '\n'; // last vertex is the same as first
-				cout << "is same? " << compare_coordinateSequences_shape(*e, *e) << '\n';
-				cout << (e->getAt(0) == e->getAt(1)) << '\n';
+			
+			// if a polygon contains holes, we "log" the indices of it and its holes
+			// e.g. polysVec: [e0, i0, i1, i2, e1]
+			// e0 contains holes -> i0, i1 and i2
+			// since it may be difficult to move std::unique_ptr around
+			// and also it can not be copied, thus we "log" the indices
+			// by comparing the coordinate sequences of e0's holes and other elements in the polysVec
+			// we can identify the i0, i1, i2, so does e1
+			// the elements which are not "logged" are indicating they are exteriors with the same tag (overlap case)
+
+			// we store the indices in the polysVec
+			// e.g. exterior_interiors[0] = {1, 2, 3}
+			// this means polysVec[0] is the exterior, and polysVec[1], polysVec[2] and polysVec[3] are its interiors
+			unordered_map<size_t, vector<size_t>> exterior_interiors_map;
+
+			for (size_t currentPoly = 0; currentPoly < polysVec.size(); ++currentPoly) {
+				// currentPoly
+				size_t numOfInteriors = polysVec[currentPoly]->getNumInteriorRing();
+				if (numOfInteriors) {
+					// get the CoordinateSequence of each interior
+					for (size_t currentInterior = 0; currentInterior < polysVec[currentPoly]->getNumInteriorRing(); ++currentInterior) {
+						unique_ptr<CoordinateSequence> interiorCoordSeq = polysVec[currentPoly]->getInteriorRingN(currentInterior)->getCoordinates();
+						
+						// compare with other polys in the polysVec
+						for (size_t comparePoly = 0; comparePoly < polysVec.size(); ++comparePoly) {
+							unique_ptr<CoordinateSequence> compareCoordSeq = polysVec[comparePoly]->getExteriorRing()->getCoordinates();
+							bool is_same_shape = compare_coordinateSequences_shape(*interiorCoordSeq, *compareCoordSeq);
+							if (is_same_shape) {
+								exterior_interiors_map[currentPoly].push_back(comparePoly);
+							}
+						}//end for: each caompraing poly
+					}//end for: each interior
+
+				}//end if: has interiors
+
+			}// end for: each poly in polysVec
+
+			cout << "exterior interiors map size: " << exterior_interiors_map.size() << '\n';
+			for (auto const& element : exterior_interiors_map)
+			{
+				cout << "exterior index: " << element.first << '\n';
+				cout << "interiors: \n";
+				for (auto const& interior : element.second)
+					cout << interior << " ";
+				cout << '\n';
 			}
 				
 			// for the overlap case, currently not considering overlap with holes
 			cout << "hey \n";
 
-		}
+		} // end if: polysVec.size() > 1
 
 		
 

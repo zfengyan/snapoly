@@ -15,6 +15,7 @@ using std::queue;
 using std::unordered_map;
 using std::list;
 using std::unordered_set;
+using std::unique_ptr;
 
 // constants
 namespace snapoly {
