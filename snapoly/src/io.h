@@ -84,7 +84,7 @@ public:
 	* Also CoordinateSequenceB can be the opposite orientation of CoordinateSequenceA: [a, d, c, b, a]
 	* in this case they are also considered as the same
 	*/
-	static void compare_coordinateSequences_shape(
+	static bool compare_coordinateSequences_shape(
 		const CoordinateSequence& C1, const CoordinateSequence& C2);
 
 

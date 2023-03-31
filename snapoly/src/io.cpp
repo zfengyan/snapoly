@@ -366,13 +366,23 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 }
 
 // compare the shape of coordinateSequences
-void io::compare_coordinateSequences_shape(const CoordinateSequence& C1, const CoordinateSequence& C2)
+bool io::compare_coordinateSequences_shape(const CoordinateSequence& C1, const CoordinateSequence& C2)
 {
 	// we store the coordinate of C1
 	unordered_set<Coordinate, CoordinateHashFunction> coordSet;
 	for (int i = 0; i < C1.size(); ++i)
 		coordSet.insert(C1.getAt(i));
-	cout << "coordSet size: " << coordSet.size() << '\n';
+
+	// we find each element in C2:
+	bool found = true;
+	for (int i = 0; i < C2.size(); ++i) {
+		const Coordinate& coord_C2 = C2.getAt(i);
+		if (coordSet.find(coord_C2) == coordSet.end()) { // if there is one element that is not found in C1
+			found = false;
+			break;
+		}		
+	}
+	return found;
 }
 
 // build output polygons from constraints
@@ -492,7 +502,7 @@ void io::build_polygons_from_constraints(
 				std::unique_ptr<CoordinateSequence> e = polysVec[i]->getExteriorRing()->getCoordinates();
 				cout << *e << '\n';
 				cout << e->size() << '\n'; // last vertex is the same as first
-				compare_coordinateSequences_shape(*e, *e);
+				cout << "is same? " << compare_coordinateSequences_shape(*e, *e) << '\n';
 				cout << (e->getAt(0) == e->getAt(1)) << '\n';
 			}
 				
