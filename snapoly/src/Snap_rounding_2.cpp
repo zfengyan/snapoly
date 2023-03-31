@@ -82,6 +82,9 @@ void Snap_rounding_2::set_tolerance(double tolerance_param)
 void Snap_rounding_2::insert_polygons_to_triangulation()
 {
 	cout << "inserting polygons to triangulation ... \n";
+
+	Timer timer; // for logging the run time
+
 	for (auto const& pgn : m_polygons)
 	{
 		// insert exterior as constraints
@@ -184,6 +187,8 @@ void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CD
 void Snap_rounding_2::add_tag_to_triangulation()
 {
 	cout << "adding tags to triangulation ... \n";
+
+	Timer timer; // for logging the run time
 	
 	// if empty vector
 	if (m_polygons.size() == 0) {
@@ -506,6 +511,8 @@ void Snap_rounding_2::snap_rounding()
 {
 	cout << '\n';
 	cout << "snap rounding... \n";
+
+	Timer timer; // for logging the run time
 
 	//Debug
 	int count = 0;
