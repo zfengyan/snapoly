@@ -234,8 +234,8 @@ void Snap_rounding_2::add_tag_to_triangulation()
 		}
 
 		// Debug
-		//++count;
-		//cout << count << '\n';
+		++count;
+		if(count % 1000 == 0)cout << count << '\n';
 		// Debug
 
 	} // end for: polygons
@@ -255,6 +255,8 @@ void Snap_rounding_2::add_tag_to_triangulation()
 // <2> remove dangles from the triangulation
 void Snap_rounding_2::remove_dangles()
 {
+	cout << "removing dangles ... \n";
+
 	vector<Constraint> danglingConstraintsVec; // store the dangling constraints for removing them from the constraints list
 	danglingConstraintsVec.reserve(m_constraintsWithInfo.size());
 
@@ -262,7 +264,15 @@ void Snap_rounding_2::remove_dangles()
 
 	list<Constraint> constraintsRef = m_constraintsWithInfo; // for references
 
+	int count = 0; // Debug
 	for (auto const& c : m_constraintsWithInfo) {
+
+		//Debug
+		//++count;
+		//cout << count << '\n';
+		//Debug
+
+
 		// if constraint is a dangle:
 		// for the ending points of constraint: ea and eb
 		// they must be the ending points of other constraints with different ids
@@ -305,7 +315,10 @@ void Snap_rounding_2::remove_dangles()
 			m_et.remove(v); // remove the dangling vertex
 			//cout << "dangling vertex: " << v->point() << '\n';
 		}
-	}	
+	}
+
+	cout << "done \n";
+
 }
 
 
@@ -407,8 +420,8 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 
 	// remove dangles - the dangles / redundant dangles will be removed
 	// remove operation includes remove the dangling constraints from the constraints list
-	// and remove the dangling vertices from the triangulation
-	remove_dangles();
+	// and remove the dangling vertices from the triangulation - yet this is a very expensive function especially to the large datasets
+	//remove_dangles();
 
 	//cout << "processing geometry done\n"; cout << '\n';
 
@@ -443,6 +456,10 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 		c.idCollection = it->idCollection; // populate the idCollection of c
 	}
 	
+
+	//Debug
+	//cout << "id: " << c.idCollection[1] << '\n';
+	//Debug
 
 	// then we use the same way to find the constraint "ca" and "cb"
 	// "ca" and "cb" may / may not be present in the constraints with info list
@@ -501,8 +518,8 @@ void Snap_rounding_2::snap_vertex_to_boundary(Face_handle& sliverFace, int captu
 
 	// at last step we remove possible dangles from the constraints with info list and the triangulation
 	// this step is important, and to avoid the possible cascading effects
-	// during the snap rounding
-	remove_dangles();
+	// during the snap rounding - yet this is a very expensive function especially to the large datasets
+	//remove_dangles();
 }
 
 
@@ -522,19 +539,23 @@ void Snap_rounding_2::snap_rounding()
 	while (true) {
 
 		// find minimum vertex to vertex
+		//cout << "finding minimum vertex to vertex ... \n";
 		std::tuple<Face_handle, int, Kernel::FT>
 			findMinimumVertexToVertex = m_et.find_minimum_vertex_to_vertex(m_squared_tolerance);
 		Face_handle incidentFaceVertexToVertex = std::get<0>(findMinimumVertexToVertex);
 		int indexVertexToVertex = std::get<1>(findMinimumVertexToVertex);
 		Kernel::FT minSquaredDistVertexToVertex = std::get<2>(findMinimumVertexToVertex);
 		Edge edgeOfVertexToVertex(incidentFaceVertexToVertex, indexVertexToVertex); // edge connecting two close vertices
+		//cout << "done \n";
 
 		// find minimum vertex to boundary
+		//cout << "finding minimum vertex to boundary ... \n";
 		std::tuple<Face_handle, int, Kernel::FT>
 			findMinimumVertexToBoundary = m_et.find_minimum_vertex_to_boundary(m_squared_tolerance);
 		Face_handle sliverFace = std::get<0>(findMinimumVertexToBoundary);
 		int capturingVertexIndex = std::get<1>(findMinimumVertexToBoundary);
 		Kernel::FT minSquaredDistVertexToBoundary = std::get<2>(findMinimumVertexToBoundary);
+		//cout << "done \n";
 
 		//cout << indexVertexToVertex << " " << capturingVertexIndex << '\n';
 		//cout << "minimum distance of Vertex to Vertex: " << std::sqrt(minSquaredDistVertexToVertex) << '\n';
@@ -542,7 +563,10 @@ void Snap_rounding_2::snap_rounding()
 
 		// exit condition
 		// if close vertex to vertex and vertex to boundary are not found
-		if (indexVertexToVertex == snapoly::constants::NOT_EXIST && capturingVertexIndex == snapoly::constants::NOT_EXIST)break;
+		if (indexVertexToVertex == snapoly::constants::NOT_EXIST && capturingVertexIndex == snapoly::constants::NOT_EXIST) {
+			cout << "no more snap rounding cases found \n";
+			break;
+		}		
 		else if (indexVertexToVertex == snapoly::constants::NOT_EXIST && capturingVertexIndex != snapoly::constants::NOT_EXIST) {
 			// call snap vertex to boundary 
 			cout << "no more close vertex - vertex is found under given tolerance, snap vertex to boundary\n";
@@ -554,25 +578,27 @@ void Snap_rounding_2::snap_rounding()
 			snap_vertex_to_vertex(edgeOfVertexToVertex); cout << '\n';
 		}
 		else {
+
 			// compare the squared distance
 			// if vertex to vertex is closer than vertex to boundary, snap vertex to vertex first
 			// if not (> or ==), snap vertex to boundary (when ==, snap vertex to boundary is a more robust way)
 			if ((minSquaredDistVertexToVertex + snapoly::constants::EPSILON) < minSquaredDistVertexToBoundary) {
-				snap_vertex_to_vertex(edgeOfVertexToVertex);
 				cout << "snap vertex to vertex first \n"; cout << '\n';
+				snap_vertex_to_vertex(edgeOfVertexToVertex);	
 			}
 			else {
-				snap_vertex_to_boundary(sliverFace, capturingVertexIndex);
 				cout << "snap vertex to boundary first \n"; cout << '\n';
-				//et.print_face(sliverFace);
-				//cout << sliverFace->vertex(capturingVertexIndex)->point() << '\n';
+				snap_vertex_to_boundary(sliverFace, capturingVertexIndex);	
 			}
+
+			//cout << "done, next loop \n";
 
 		}
 
 		//Debug
 		//++count;
-		//if (count == 5)break;
+		//cout << "sr: " << count << '\n';
+		//if (count == 1)break;
 		//Debug
 
 	} // end while: until no cases are found under given tolerance

@@ -15,10 +15,10 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\Delft.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\Delft_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\Delft_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\Delft_res.gpkg)";
 
 	// Timer
 	Timer timer;
@@ -36,14 +36,16 @@ int main()
 	// find the minimum tolerance ---------------------------------------------
 	std::priority_queue<double> lengthQueue;
 	sr.find_tolerance(lengthQueue);
+	cout << "snap rounding cases uner the current tolerance: " << lengthQueue.size() << '\n';
 	cout << "distances under the current tolerance: " << '\n';
 	while (!lengthQueue.empty()) {
-		cout << lengthQueue.top() << '\n';
+		//cout << lengthQueue.top() << '\n';
 		lengthQueue.pop();
 	}
+	
 	// find the minimum tolerance ---------------------------------------------
 
-	sr.snap_rounding();
+	sr.snap_rounding(); // TODO: remove_dangles() for large datasets?
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
@@ -51,7 +53,7 @@ int main()
 
 	//io::export_to_gpkg(tri_file, sr.triangulation());
 
-	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 
