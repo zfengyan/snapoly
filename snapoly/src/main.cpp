@@ -15,10 +15,10 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\delftcase.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\delftcase_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\delftcase_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\delftcase_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\Delft_1_res.gpkg)";
 
 	// Timer
 	Timer timer;
@@ -61,7 +61,7 @@ int main()
 
 	io::export_to_gpkg(res_file, sr.result_polygons());
 
-	//sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
+	sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
 
 
 	// -----------------------------------------------------------------------------------------

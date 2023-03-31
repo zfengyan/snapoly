@@ -474,7 +474,7 @@ void io::build_polygons_from_constraints(
 		* @return a collection of Polygons*/
 		vector<unique_ptr<GEOSPolygon>> polysVec = pgnizer.getPolygons();
 
-		cout << "polys vector size: " << polysVec.size() << '\n';
+		//cout << "polys vector size: " << polysVec.size() << '\n';
 
 		// it is IMPORTANT to check whether the polys vector is populated
 		if (!polysVec.size()) {
