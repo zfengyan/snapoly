@@ -11,6 +11,13 @@ using namespace geos::operation::polygonize;
 using GEOSPolygon = geos::geom::Polygon; // differentiate from CDTPolygon
 
 class io {
+public:
+	// for using std::unordered_set with Coordinate class
+	struct CoordinateHashFunction {
+		size_t operator()(const Coordinate& Coord) const {
+			return std::hash<double>{}(Coord.x) ^ std::hash<double>{}(Coord.y);
+		}
+	};
 
 public:
 
@@ -65,6 +72,20 @@ public:
 	* export to GPKG file
 	*/
 	static void export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo);
+
+
+	/*
+	* compare two CoordinateSequences - if they represent the same geometry
+	* this function is going to be used in build_polygons_from_constraints() function
+	* the built polygons will be returned in a vector, including polygon with holes and holes themselves
+	* e.g. a sqaure [a, b, c, d]
+	* CoordinateSequenceA: [a, b, c, d, a] - note that in a CoordinateSequence the last vertex is the same as the first
+	* CoordinateSequenceB: [b, c, d, a, b] - this represesnts the same ring as CoordinateSequenceA
+	* Also CoordinateSequenceB can be the opposite orientation of CoordinateSequenceA: [a, d, c, b, a]
+	* in this case they are also considered as the same
+	*/
+	static void compare_coordinateSequences_shape(
+		const CoordinateSequence& C1, const CoordinateSequence& C2);
 
 
 	/*

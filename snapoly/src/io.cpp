@@ -365,6 +365,16 @@ void io::export_to_gpkg(const char* filename, const list<Constraint>& constraint
 
 }
 
+// compare the shape of coordinateSequences
+void io::compare_coordinateSequences_shape(const CoordinateSequence& C1, const CoordinateSequence& C2)
+{
+	// we store the coordinate of C1
+	unordered_set<Coordinate, CoordinateHashFunction> coordSet;
+	for (int i = 0; i < C1.size(); ++i)
+		coordSet.insert(C1.getAt(i));
+	cout << "coordSet size: " << coordSet.size() << '\n';
+}
+
 // build output polygons from constraints
 void io::build_polygons_from_constraints(
 	list<Constraint>& constraintsWithInfo,
@@ -406,6 +416,9 @@ void io::build_polygons_from_constraints(
 		//++count; // Debug
 		//cout << count << '\n'; // Debug
 
+		// the osm id which will be attached to the polygon
+		const string& osm_id = element.first;
+
 		vector<vector<Coordinate>> coordinates;
 
 		for (auto const& cons : element.second) { // element.second: vector<Constraint> -> store the constraints with same id
@@ -444,29 +457,56 @@ void io::build_polygons_from_constraints(
 		/*Ownership of vector is transferred to caller, subsequent
 		* calls will return NULL.
 		* @return a collection of Polygons*/
-		std::vector<std::unique_ptr<GEOSPolygon>> polys = pgnizer.getPolygons();
+		std::vector<std::unique_ptr<GEOSPolygon>> polysVec = pgnizer.getPolygons();
+
+		cout << "polys vector size: " << polysVec.size() << '\n';
 
 		// it is IMPORTANT to check whether the polys vector is populated
-		if (!polys.size()) {
-			cout << "the constraints with osm_id: " << element.first
+		if (!polysVec.size()) {
+			cout << "the constraints with osm_id: " << osm_id
 				<< " are not closed, will not form any polygon \n";
 			continue; // continue to the next for loop
+		}	
+		else if (polysVec.size() == 1) { // if it only contains one polygon - no holes, add exterior ring
+			// build resPolygon
+			CDTPolygon resPolygon;
+			resPolygon.id() = osm_id;
+
+			// exterior ring
+			std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polysVec[0]->getExteriorRing()->getCoordinates();
+			std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
+
+			// add points of exterior
+			for (std::size_t i = numOfExteriorPoints; i > 0; --i) {
+				const Coordinate& coord = exteriorCoordSeq->getAt(i);
+				resPolygon.outer_boundary().push_back(CDTPoint(coord.x, coord.y));
+				//std::cout << "(" << coord.x << ", " << coord.y << ")" << std::endl;
+			}
+
+			// add built CDTPolygon to the vec
+			resPolygonsVec.push_back(resPolygon);
+		}
+		else if(polysVec.size() > 1){ // could be polygon with holes or the overlap case
+			for (int i = 0; i < polysVec.size(); ++i) {
+				cout << "num of holes: " << polysVec[i]->getNumInteriorRing() << '\n';
+				std::unique_ptr<CoordinateSequence> e = polysVec[i]->getExteriorRing()->getCoordinates();
+				cout << *e << '\n';
+				cout << e->size() << '\n'; // last vertex is the same as first
+				compare_coordinateSequences_shape(*e, *e);
+				cout << (e->getAt(0) == e->getAt(1)) << '\n';
+			}
+				
+			// for the overlap case, currently not considering overlap with holes
+			cout << "hey \n";
+
 		}
 
-
-
 		
-		// testing
-		cout << "polygon id: " << element.first << '\n';
-		cout << "polygon vector size: " << polys.size() << '\n';
-		cout << "number of holes? " << '\n';
 
-		//std::unique_ptr<CoordinateSequence> e;
-		std::unique_ptr<CoordinateSequence> e = polys[1]->getExteriorRing()->getCoordinates();
-		std::unique_ptr<CoordinateSequence> i = polys[0]->getInteriorRingN(0)->getCoordinates();
+		//cout << "polysList size: " << polysList.size() << '\n';
 
-		CoordinateSequence::reverse(e.get());
-
+		//std::pair<>
+	
 		// if two are the same, that means polys[1] is the interior ring of polys[0]
 		// remove from the polys list
 		// e.g.
@@ -484,8 +524,23 @@ void io::build_polygons_from_constraints(
 		// and after we have written all polygon with holes
 		// the rest elements in the list would be the exterior rings
 
-		cout << e->toString() << '\n';
-		cout << i->toString() << '\n';
+
+		
+		// testing
+		//cout << "polygon id: " << osm_id << '\n';
+		//cout << "polygon vector size: " << polysVec.size() << '\n';
+		//cout << "number of holes? " << '\n';
+
+		////std::unique_ptr<CoordinateSequence> e;
+		//std::unique_ptr<CoordinateSequence> e = polysVec[1]->getExteriorRing()->getCoordinates();
+		//std::unique_ptr<CoordinateSequence> i = polysVec[0]->getInteriorRingN(0)->getCoordinates();
+
+		//CoordinateSequence::reverse(e.get());
+
+		//
+
+		//cout << e->toString() << '\n';
+		//cout << i->toString() << '\n';
 
 		//cout << "if same? " << (*e == *i) << '\n';
 		//CoordinateSequence::reverse(e.get());
@@ -493,18 +548,6 @@ void io::build_polygons_from_constraints(
 		//cout << "i: " << i->toString() << '\n';
 		//CoordinateSequence::equals(e.get(), i.get());
 		
-
-		for (auto const& poly : polys) {
-			//cout << poly->getNumInteriorRing() << '\n';
-			//const LinearRing e1 = *poly->getExteriorRing();
-			//const LinearRing e2 = *poly->getInteriorRingN(0);
-
-			
-			
-			//e1.equals(&e2);
-			
-			//cout << poly->getin
-		}
 		// testing	
 
 		
@@ -529,14 +572,14 @@ void io::build_polygons_from_constraints(
 
 		// <1> the polygon contains hole(s), polys[0] is the exterior
 		// when adding exterior ring, align with the reading functions: add from backward
-		if (polys[0]->getNumInteriorRing()) { // if there is(are) hole(s)
+		if (polysVec[0]->getNumInteriorRing()) { // if there is(are) hole(s)
 			
 			// build resPolygon
 			CDTPolygon resPolygon;
 			resPolygon.id() = element.first;
 											  									  
 			// exterior ring --------------------------------------------------------------------------------------------------
-			std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[0]->getExteriorRing()->getCoordinates();
+			std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polysVec[0]->getExteriorRing()->getCoordinates();
 			std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
 
 			// add points of exterior
@@ -550,8 +593,8 @@ void io::build_polygons_from_constraints(
 
 			// when adding interior rings, the sequence of interior rings must be oriented CW not CCW
 			// add interior rings ---------------------------------------------------------------------------------------------
-			for (std::size_t i = 0; i < polys[0]->getNumInteriorRing(); ++i) {
-				std::unique_ptr<CoordinateSequence> holeCoordSeq = polys[0]->getInteriorRingN(i)->getCoordinates();
+			for (std::size_t i = 0; i < polysVec[0]->getNumInteriorRing(); ++i) {
+				std::unique_ptr<CoordinateSequence> holeCoordSeq = polysVec[0]->getInteriorRingN(i)->getCoordinates();
 				
 				// represent a hole
 				Polygon_2 hole;
@@ -604,14 +647,14 @@ void io::build_polygons_from_constraints(
 			//} // end for: each poly in polys	
 				
 
-			for (int i = 0; i < polys.size(); ++i) {
+			for (int i = 0; i < polysVec.size(); ++i) {
 				// only add exterior
 				// build resPolygon - for each poly
 				CDTPolygon resPolygon;
 				resPolygon.id() = element.first;
 
 				// exterior ring
-				std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polys[i]->getExteriorRing()->getCoordinates();
+				std::unique_ptr<CoordinateSequence> exteriorCoordSeq = polysVec[i]->getExteriorRing()->getCoordinates();
 				std::size_t numOfExteriorPoints = exteriorCoordSeq->getSize() - 1; // last point is the same as the first
 
 				// add points of exterior
