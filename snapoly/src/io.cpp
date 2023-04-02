@@ -46,6 +46,10 @@ void io::add_OGRPolygon_to_polygons(
 
 	int NumOuterPoints = poOuterRing->getNumPoints() - 1; // first point is the same as the last point
 
+	//debug
+	//cout << "number of exterior points: " << poOuterRing->getNumPoints() - 1 << '\n';
+	//debug
+
 	//for (int i = 0; i < NumOuterPoints; ++i) // degenerate cases: NumOfouterRingPoints < 3?
 	//{
 	//	polygon.outer_boundary().push_back(Point(outerRing->getX(i), outerRing->getY(i)));

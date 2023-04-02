@@ -233,9 +233,8 @@ void Snap_rounding_2::add_tag_to_triangulation()
 
 
 		// Debug
-		//cout << "current pgn: " << pgn.id() << '\n';
 		++count;
-		if(count % 1000 == 0)cout << count << '\n';
+		if (count % 1000 == 0)cout << "tagging polygons: " << count << '\n';
 		// Debug
 
 	} // end for: polygons
