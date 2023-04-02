@@ -356,7 +356,7 @@ bool Enhanced_constrained_delaunay_triangulation_2::is_sliver_base(const Face_ha
 	// if the projection is within the base edge, then squared_distance will be the same as squared_height
 	// otherwise CGAL::squared_distance() calculates the distance between a CDTPoint and the nearest end CDTPoint of a segment
 	Segment_2 segment(vertices_of_edge(face, i).first->point(), vertices_of_edge(face, i).second->point());
-	Kernel::FT squared_distance_ = CGAL::squared_distance(face->vertex(i)->point(), segment);
+	Kernel::FT squared_distance_ = CGAL::squared_distance(face->vertex(i)->point(), segment);	
 	auto difference = std::abs(squared_height_ - squared_distance_); // type of return value of std::abs(): double
 	if (difference < snapoly::constants::EPSILON)
 		condition_2 = true;

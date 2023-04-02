@@ -352,6 +352,12 @@ public:
 	*/
 	const double& tolerance()const { return m_tolerance; }
 
+
+	/*
+	* get the squared tolerances
+	*/
+	const double& squared_tolerance()const { return m_squared_tolerance; }
+
 protected:
 	/*
 	* the sequence of member declarations must be aligned with the constructors
