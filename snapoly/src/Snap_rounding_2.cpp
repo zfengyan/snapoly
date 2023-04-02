@@ -156,7 +156,7 @@ void Snap_rounding_2::add_tag_to_one_polygon(Face_handle& startingFace, const CD
 					}
 					else { // if the current constraint is not present yet
 						// attach the tag info and add it to the constraintsWithID collection
-						c.idCollection.push_back(currentFace->info().faceid_collection[1]);
+						c.merge_id_collection(currentFace->info().faceid_collection);
 						m_constraintsWithInfo.push_back(c);
 					}			
 				}
@@ -202,7 +202,7 @@ void Snap_rounding_2::add_tag_to_triangulation()
 	for (auto const& pgn : m_polygons)
 	{
 		std::size_t numExterior = static_cast<std::size_t>(pgn.number_of_exterior_points());
-		vector<Face_handle> starting_faces;
+		vector<Face_handle> starting_faces; // store all possible starting faces for one polygon
 		starting_faces.reserve(numExterior + 1); // each face handle corresponds to a vertex if possible
 
 		for (auto constIter = pgn.exterior_begin(); constIter != pgn.exterior_end(); ++constIter) {
@@ -216,9 +216,7 @@ void Snap_rounding_2::add_tag_to_triangulation()
 						bool centroid_inside = CDTPolygon::is_point_inside_polygon(centroid, pgn); // check inside
 						if (centroid_inside) {
 							starting_faces.push_back(static_cast<Face_handle>(fc));
-							break; // comment this will allows to handle the overlapping area
-							// since a starting face can have all 3 edges constrained
-							// yet it still depends on the specific arrangements (see overlapping example)
+							break; // comment this will increase the run time but maybe more robust ... ?
 						}
 					}
 
@@ -233,7 +231,9 @@ void Snap_rounding_2::add_tag_to_triangulation()
 			}
 		}
 
+
 		// Debug
+		//cout << "current pgn: " << pgn.id() << '\n';
 		++count;
 		if(count % 1000 == 0)cout << count << '\n';
 		// Debug
@@ -341,37 +341,100 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 		m_constraintsWithInfo.remove(c);
 	}
 
-	// ATTENTION: Will re-introduction of constraints intersect with other constraints?
+	// ATTENTION: Will this re-introduction of constraints intersect with other constraints?
+
+
+	// after the modification of the constraints, there is a possibility that new constraints can be repeated
+	// *a  *centroid *b  
+	//    /         
+	//   /     
+	//  /        
+	// / 
+	//*c
+	// after the modification of constraint: c-a to c-centroid
+	// now c-b will be changed to c-centroid as well
+	// then the id collections of corresponding constraints need to be merged
+	// thus we need to check whether the new constraint exists in the constraints with info yet
+	// steps:
+	// <1> find ca in the constraints list, store its id collection (make a copy)
+	// <2> build constraint(c, centroid), check if it exists in the constraints list yet
+	// <3> if not, we change the point a of ca to centroid, then ca becomes to: c-centroid
+	//	   if exists, we merge the previously stored id collection of ca into the found constraint
+	// e.g. after we update the constraints of point a
+	// when we update the constraints of point b
+	// we store the id collection of b: id_collection_b
+	// and we found that c-centroid has already existed in the constraints list
+	// then we merge the id_collection_b into existed c-centroid's id collection
+
 
 	// for va and constraints of va, update the corresponding constraint in constraintsWithInfo 
 	// if va-vb is constrained, vb is not one of the incident points of constraints of va
 	m_et.get_constrained_incident_vertices(va, constrained_incident_vertices_va, vb);
 	for (auto& incidentPoint : constrained_incident_vertices_va) {
-		Constraint c(va->point(), incidentPoint);
-		for (auto& refC : m_constraintsWithInfo) { // find the constraint in the vector
-			if (c == refC) { // change the point to the centroid
-				if (refC.p0 == va->point())
-					refC.p0 = centroid;
-				else 
-					refC.p1 = centroid;
-			}
+
+		// let's just name the constraint of incidentPoint - va as ca (as is shown in the comments above)
+		// find ca in the constraints list and store its id collection as idCollection_ca
+		vector<string> idCollection_ca;
+		Constraint ca(incidentPoint, va->point());
+		auto it = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), ca);
+		if (it != m_constraintsWithInfo.end()) { // "c" is found and returned the pointer pointing to it
+			idCollection_ca = it->idCollection; // store the idCollection_ca
 		}
+
+		// now let's build the new constraint: c-centroid
+		Constraint c_centroid(incidentPoint, centroid);
+		auto it_centroid = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), c_centroid); // find the constraint
+		if (it_centroid != m_constraintsWithInfo.end()) { // if it already exists, merge the id collection
+			it_centroid->merge_id_collection(idCollection_ca);
+		}	
+		else { // if it doesn't exist, update point a to centroid
+			if (it->p0 == va->point())
+				it->p0 = centroid;
+			else
+				it->p1 = centroid;
+		}
+
 	} // end for: all incident points of va 
+
+	
 
 	//for vb and constraints of vb, update the corresponding constraint in constraintsWithInfo 
 	// if va-vb is constrained, va is not one of the incident points of constraints of vb
 	m_et.get_constrained_incident_vertices(vb, constrained_incident_vertices_vb, va);
 	for (auto& incidentPoint : constrained_incident_vertices_vb) {
-		Constraint c(vb->point(), incidentPoint);
-		for (auto& refC : m_constraintsWithInfo) { // find the constraint in the vector
-			if (c == refC) { // change the point to the centroid
-				if (refC.p0 == vb->point())
-					refC.p0 = centroid;
-				else 
-					refC.p1 = centroid;
-			}
+		
+		// let's just name the constraint of (incidentPoint - vb) as cb (as is shown in the comments above)
+		// find cb in the constraints list and store its id collection as idCollection_cb
+		vector<string> idCollection_cb;
+		Constraint cb(incidentPoint, vb->point());
+		auto it = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), cb);
+		if (it != m_constraintsWithInfo.end()) { // "c" is found and returned the pointer pointing to it
+			idCollection_cb = it->idCollection; // store the idCollection_ca
+		}
+
+		// now let's build the new constraint: c-centroid
+		Constraint c_centroid(incidentPoint, centroid);
+		auto it_centroid = std::find(m_constraintsWithInfo.begin(), m_constraintsWithInfo.end(), c_centroid); // find the constraint
+		if (it_centroid != m_constraintsWithInfo.end()) { // if it already exists, merge the id collection
+			it_centroid->merge_id_collection(idCollection_cb);
+		}
+		else { // if it doesn't exist, update point a to centroid
+			if (it->p0 == vb->point())
+				it->p0 = centroid;
+			else
+				it->p1 = centroid;
 		}
 	} // end for: all incident points of vb
+
+
+	
+	/*Constraint count_c(constrained_incident_vertices_vb[0], centroid);
+	int count = 0;
+	for (auto const& refC : m_constraintsWithInfo) {
+		if (count_c == refC)++count;
+	}
+	cout << "count: " << count << '\n';*/
+
 
 	// modification of the original triangulation is a must
 	// otherwise the close vertices will always be found
@@ -386,6 +449,8 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 	cout << "incident points of constraints: " << '\n';
 	for (auto const& p : incident_points_of_constraints_vb)
 		cout << p << '\n';*/
+	//cout << "constrained incident points a: " << constrained_incident_vertices_va.size() << '\n';
+	//cout << "constrained incident points b: " << constrained_incident_vertices_vb.size() << '\n';
 	//test
 
 	// after updating the constraintsWithInfo, alter the triangulation
@@ -410,12 +475,12 @@ void Snap_rounding_2::snap_vertex_to_vertex(Edge& edgeOfVertexToVertex)
 	if (constrained_incident_vertices_va.empty() || constrained_incident_vertices_vb.empty())
 		m_et.insert(centroid);
 
-	// check redundacy and dangles:
+	// check dangles:
 	//   a   b           centroid
 	//   /\  /\           / | \ 
 	//  /  \/  \    ->   /  |  \
 	//  |      |         |     |
-	// after snap rounding a and b, there will be redundant constraint dangles in the middle (connecting to the centroid)
+	// after snap rounding a and b, there will be a danglling constraint in the middle (connecting to the centroid)
 	// and there will also be dangling vertex
 
 	// remove dangles - the dangles / redundant dangles will be removed
@@ -596,15 +661,16 @@ void Snap_rounding_2::snap_rounding()
 		}
 
 		//Debug
-		//++count;
+		++count;
 		//cout << "sr: " << count << '\n';
-		//if (count == 1)break;
+		//if (count == 2)break;
 		//Debug
 
 	} // end while: until no cases are found under given tolerance
 
 	//-------------------------------------------------------------------------------------------------------------------------
 
+	cout << "total snap rounded: " << count << '\n';
 	cout << "done \n";
 	cout << '\n';
 }

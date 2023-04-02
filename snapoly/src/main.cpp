@@ -15,17 +15,17 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\d1.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\d1_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\d1_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\d1_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\Delft\Delft.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\Delft\Delft_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\Delft\Delft_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\Delft\Delft_res.gpkg)";
 
 	// Timer
 	Timer timer;
 
 	// Snap rounding
 	Snap_rounding_2 sr;
-	sr.set_tolerance(36); // for Delft: 0.01m
+	sr.set_tolerance(0.01); // for Delft: 0.01m
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -48,13 +48,15 @@ int main()
 
 	sr.snap_rounding(); // not using remove dangles()
 
+
+
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	io::export_to_gpkg(tri_file, sr.triangulation());
+	//io::export_to_gpkg(tri_file, sr.triangulation());
 
-	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 

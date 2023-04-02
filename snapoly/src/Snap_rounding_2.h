@@ -82,6 +82,7 @@ struct Constraint {
 
 
 // class for hash function - unordered_set<Constraint>
+// to be added
 class ConstraintHashFunction {
 public:
 	// id is returned as hash function
