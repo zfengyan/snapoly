@@ -120,6 +120,31 @@ public:
 }; // class io
 
 
+namespace snapoly {
+	namespace printer {
+
+		/*
+		* print out a CDTPoint in the form of: (x, y)
+		*/
+		void print(const Vertex_handle& v);
+
+
+		/*
+		* print out an Edge(Face_handle, int)
+		*/
+		void print(const Edge& edge);
+
+
+		/*
+		* print out an Face_handle
+		*/
+		void print(const Face_handle& face);
+	}
+}
+
+
+
+
 
 #endif // !SNAPOLY_IO_H
 

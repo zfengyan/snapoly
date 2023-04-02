@@ -1114,3 +1114,33 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 }
 
 
+void snapoly::printer::print(const Vertex_handle& v)
+{
+	cout << "(" << v->point().x() + io::minX << ", " << v->point().y() + io::minY << ")";
+}
+
+void snapoly::printer::print(const Edge& edge)
+{
+	Face_handle face = edge.first;
+	int opposite_vertex = edge.second;
+	int cw = face->cw(opposite_vertex);
+	int ccw = face->ccw(opposite_vertex);
+	cout << "(" << face->vertex(ccw)->point().x() + io::minX << ", " << face->vertex(ccw)->point().y() + io::minY << ")"
+		<< " -- " << "(" << face->vertex(cw)->point().x() + io::minX << ", " << face->vertex(cw)->point().y() + io::minY << ")" << '\n';
+}
+
+void snapoly::printer::print(const Face_handle& face)
+{
+	cout << '\n';
+	cout << "-- Face handle: " << '\n';
+	cout << "0: " << "(" << face->vertex(0)->point().x() + io::minX <<
+		", " << face->vertex(0)->point().y() + io::minY << ")" << '\n';
+	cout << "1: " << "(" << face->vertex(1)->point().x() + io::minX <<
+		", " << face->vertex(1)->point().y() + io::minY << ")" << '\n';
+	cout << "2: " << "(" << face->vertex(2)->point().x() + io::minX <<
+		", " << face->vertex(2)->point().y() + io::minY << ")" << '\n';
+	cout << '\n';
+}
+
+
+
