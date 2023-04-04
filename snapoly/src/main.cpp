@@ -15,10 +15,10 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\Delft\delftcase.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\Delft\delftcase_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\Delft\delftcase_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\Delft\delftcase_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\examples\example.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\examples\example_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\examples\example_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\examples\example_res.gpkg)";
 
 	// Timer
 	Timer timer;
@@ -54,9 +54,9 @@ int main()
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	io::export_to_gpkg(tri_file, sr.triangulation());
+	//io::export_to_gpkg(tri_file, sr.triangulation());
 
-	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 

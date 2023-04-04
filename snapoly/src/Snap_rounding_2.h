@@ -194,8 +194,8 @@ public:
 
 	// initialize according to the declaraion: m_tolerance(0.3),
 	Snap_rounding_2():
-		m_tolerance(0.3),
-		m_squared_tolerance(0.09),
+		m_tolerance(0.01),
+		m_squared_tolerance(0.0001),
 		m_et(),
 		m_constraintsWithInfo(),
 		m_polygons(),
