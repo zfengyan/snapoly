@@ -35,6 +35,7 @@ namespace snapoly {
 		*/
 
 		const int NOT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
+
 		const double EPSILON = 1e-8; // epsilon: tolerance 1e-8, sometimes the difference will be > 1e-15, thus we use a "bigger" epsilon like 1e-8
 	}
 }
