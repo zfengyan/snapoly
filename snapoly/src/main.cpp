@@ -12,9 +12,26 @@
 
 
 
-int main()
+int main(int argc, char** argv)
 {
-	
+	cmdline::parser p;
+	p.set_program_name("snapoly(v1.0)"); // set the program name in the console
+	p.add<std::string>("dataset", 'd', "input dataset (GPKG)", true, ""); // dataset file
+
+	/* run parser -----------------------------------------------------------------------------------------------------------*/
+	bool ok = p.parse(argc, argv);
+
+	if (argc == 1 || p.exist("help")) {
+		std::cerr << p.usage();
+		return 0;
+	}
+
+	if (!ok) {
+		std::cerr << p.error() << std::endl << p.usage();
+		return 0;
+	}
+	/* ----------------------------------------------------------------------------------------------------------------------*/
+
 	const char* input_file = R"(D:\snapoly\data\examples\triangle.gpkg)";
 	const char* tri_file = R"(D:\snapoly\data\examples\triangle_tri.gpkg)";
 	const char* output_boundaries_file = R"(D:\snapoly\data\examples\triangle_boundaries.gpkg)";
