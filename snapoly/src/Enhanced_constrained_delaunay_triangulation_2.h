@@ -35,7 +35,8 @@ namespace snapoly {
 		*/
 
 		const int NOT_EXIST = -1; // inicates an Edge object does not exist, for example edge.second = ERROR_INDEX indicating the edge does not exist
-		const double EPSILON = 1e-8; // epsilon: tolerance 1e-8 by default? or use a more accurate value such as 1e-15?
+
+		const double EPSILON = 1e-8; // epsilon: tolerance 1e-8, sometimes the difference will be > 1e-15, thus we use a "bigger" epsilon like 1e-8
 	}
 }
 
@@ -408,29 +409,6 @@ public:
 
 
 typedef Enhanced_constrained_delaunay_triangulation_2 Enhanced_triangulation;
-
-
-namespace snapoly {
-	namespace printer {
-
-		/*
-		* print out a CDTPoint in the form of: (x, y)
-		*/
-		void print(const Vertex_handle& v);
-
-
-		/*
-		* print out an Edge(Face_handle, int)
-		*/
-		void print(const Edge& edge);
-
-
-		/*
-		* print out an Face_handle
-		*/
-		void print(const Face_handle& face);
-	}
-}
 
 
 #endif // !ENHANCED_CONSTRAINED_DELAUNAY_TRINGULATION_2_H

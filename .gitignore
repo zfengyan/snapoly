@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # data folder - may contain large datasets
 data/
+
+# thesis folder
+thesis/

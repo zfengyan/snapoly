@@ -82,6 +82,7 @@ struct Constraint {
 
 
 // class for hash function - unordered_set<Constraint>
+// to be added
 class ConstraintHashFunction {
 public:
 	// id is returned as hash function
@@ -193,8 +194,8 @@ public:
 
 	// initialize according to the declaraion: m_tolerance(0.3),
 	Snap_rounding_2():
-		m_tolerance(0.3),
-		m_squared_tolerance(0.09),
+		m_tolerance(0.01),
+		m_squared_tolerance(0.0001),
 		m_et(),
 		m_constraintsWithInfo(),
 		m_polygons(),
@@ -351,6 +352,12 @@ public:
 	* tolerance must be modified using set_tolerance() function
 	*/
 	const double& tolerance()const { return m_tolerance; }
+
+
+	/*
+	* get the squared tolerances
+	*/
+	const double& squared_tolerance()const { return m_squared_tolerance; }
 
 protected:
 	/*

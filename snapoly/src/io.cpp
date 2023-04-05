@@ -46,6 +46,10 @@ void io::add_OGRPolygon_to_polygons(
 
 	int NumOuterPoints = poOuterRing->getNumPoints() - 1; // first point is the same as the last point
 
+	//debug
+	//cout << "number of exterior points: " << poOuterRing->getNumPoints() - 1 << '\n';
+	//debug
+
 	//for (int i = 0; i < NumOuterPoints; ++i) // degenerate cases: NumOfouterRingPoints < 3?
 	//{
 	//	polygon.outer_boundary().push_back(Point(outerRing->getX(i), outerRing->getY(i)));
@@ -1112,5 +1116,35 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 	cout << "file saved at: " << filename << '\n';
 
 }
+
+
+void snapoly::printer::print(const Vertex_handle& v)
+{
+	cout << "(" << v->point().x() + io::minX << ", " << v->point().y() + io::minY << ")";
+}
+
+void snapoly::printer::print(const Edge& edge)
+{
+	Face_handle face = edge.first;
+	int opposite_vertex = edge.second;
+	int cw = face->cw(opposite_vertex);
+	int ccw = face->ccw(opposite_vertex);
+	cout << "(" << face->vertex(ccw)->point().x() + io::minX << ", " << face->vertex(ccw)->point().y() + io::minY << ")"
+		<< " -- " << "(" << face->vertex(cw)->point().x() + io::minX << ", " << face->vertex(cw)->point().y() + io::minY << ")" << '\n';
+}
+
+void snapoly::printer::print(const Face_handle& face)
+{
+	cout << '\n';
+	cout << "-- Face handle: " << '\n';
+	cout << "0: " << "(" << face->vertex(0)->point().x() + io::minX <<
+		", " << face->vertex(0)->point().y() + io::minY << ")" << '\n';
+	cout << "1: " << "(" << face->vertex(1)->point().x() + io::minX <<
+		", " << face->vertex(1)->point().y() + io::minY << ")" << '\n';
+	cout << "2: " << "(" << face->vertex(2)->point().x() + io::minX <<
+		", " << face->vertex(2)->point().y() + io::minY << ")" << '\n';
+	cout << '\n';
+}
+
 
 

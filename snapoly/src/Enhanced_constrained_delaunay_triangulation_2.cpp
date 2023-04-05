@@ -356,7 +356,7 @@ bool Enhanced_constrained_delaunay_triangulation_2::is_sliver_base(const Face_ha
 	// if the projection is within the base edge, then squared_distance will be the same as squared_height
 	// otherwise CGAL::squared_distance() calculates the distance between a CDTPoint and the nearest end CDTPoint of a segment
 	Segment_2 segment(vertices_of_edge(face, i).first->point(), vertices_of_edge(face, i).second->point());
-	Kernel::FT squared_distance_ = CGAL::squared_distance(face->vertex(i)->point(), segment);
+	Kernel::FT squared_distance_ = CGAL::squared_distance(face->vertex(i)->point(), segment);	
 	auto difference = std::abs(squared_height_ - squared_distance_); // type of return value of std::abs(): double
 	if (difference < snapoly::constants::EPSILON)
 		condition_2 = true;
@@ -447,30 +447,3 @@ void Enhanced_constrained_delaunay_triangulation_2::mark_constrained(Face_handle
 		mark_constraint(f, i); // protected member function from CDT class
 }
 // ====================================================================================================================================================================
-
-
-
-void snapoly::printer::print(const Vertex_handle& v)
-{
-	cout << "(" << v->point().x() << ", " << v->point().y() << ")";
-}
-
-void snapoly::printer::print(const Edge& edge)
-{
-	Face_handle face = edge.first;
-	int opposite_vertex = edge.second;
-	int cw = face->cw(opposite_vertex);
-	int ccw = face->ccw(opposite_vertex);
-	cout << "(" << face->vertex(ccw)->point().x() << ", " << face->vertex(ccw)->point().y() << ")"
-		<< " -- " << "(" << face->vertex(cw)->point().x() << ", " << face->vertex(cw)->point().y() << ")" << '\n';
-}
-
-void snapoly::printer::print(const Face_handle& face)
-{
-	cout << '\n';
-	cout << "-- Face handle: " << '\n';
-	cout << "0: " << face->vertex(0)->point() << '\n';
-	cout << "1: " << face->vertex(1)->point() << '\n';
-	cout << "2: " << face->vertex(2)->point() << '\n';
-	cout << '\n';
-}

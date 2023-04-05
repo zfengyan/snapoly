@@ -15,17 +15,17 @@
 int main()
 {
 	
-	const char* input_file = R"(D:\snapoly\data\netherlands\Delft\Delft.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\netherlands\Delft\Delft_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\netherlands\Delft\Delft_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\netherlands\Delft\Delft_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\examples\triangle.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\examples\triangle_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\examples\triangle_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\examples\triangle_res.gpkg)";
 
 	// Timer
 	Timer timer;
 
 	// Snap rounding
 	Snap_rounding_2 sr;
-	sr.set_tolerance(0.01);
+	sr.set_tolerance(0.01); // for Delft: 0.01m
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -42,18 +42,21 @@ int main()
 		//cout << lengthQueue.top() << '\n';
 		lengthQueue.pop();
 	}
+	//cout << "the squared height of the sliver triangle is: " << min_squared_height << '\n';
 	
 	// find the minimum tolerance ---------------------------------------------
 
-	sr.snap_rounding(); // TODO: remove_dangles() for large datasets?
+	//sr.snap_rounding(); // not using remove dangles()
+
+
 
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	//io::export_to_gpkg(tri_file, sr.triangulation());
+	io::export_to_gpkg(tri_file, sr.triangulation());
 
-	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 
