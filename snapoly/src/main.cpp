@@ -32,17 +32,35 @@ int main(int argc, char** argv)
 	}*/
 	/* ----------------------------------------------------------------------------------------------------------------------*/
 
-	const char* input_file = R"(D:\snapoly\data\examples\triangle.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\examples\triangle_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\examples\triangle_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\examples\triangle_res.gpkg)";
-
-	// Timer
-	Timer timer;
 
 	// Snap rounding
 	Snap_rounding_2 sr;
 	sr.set_tolerance(0.01); // for Delft: 0.01m
+
+
+	/* ----------------------------------------------------------------------------------------------------------------------*/
+	if (argc < 2) {
+		std::cout << "default tolerance is set to 0.01m" << std::endl;
+	}
+	else {
+		try {
+			double tol = std::stod(argv[1]);
+			sr.set_tolerance(tol);
+		}
+		catch (const std::exception& e) {
+			std::cout << "Error: Invalid double value provided." << e.what() << std::endl;
+			return 1;
+		}
+	}
+	/* ----------------------------------------------------------------------------------------------------------------------*/
+
+	const char* input_file = R"(D:\snapoly\data\Delft\Delft.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\Delft\Delft_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\Delft\Delft_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\Delft\Delft_res.gpkg)";
+
+	// Timer
+	Timer timer;
 
 	io::add_polygons_from_input_file(input_file, sr.polygons());
 
@@ -63,7 +81,7 @@ int main(int argc, char** argv)
 	
 	// find the minimum tolerance ---------------------------------------------
 
-	//sr.snap_rounding(); // not using remove dangles()
+	sr.snap_rounding(); // not using remove dangles()
 
 
 
@@ -71,9 +89,9 @@ int main(int argc, char** argv)
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
 
-	io::export_to_gpkg(tri_file, sr.triangulation());
+	//io::export_to_gpkg(tri_file, sr.triangulation());
 
-	io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
+	//io::export_to_gpkg(output_boundaries_file, sr.constraintsWithInfo());
 
 	//cout << "file saved at: " << output_file << '\n';
 
