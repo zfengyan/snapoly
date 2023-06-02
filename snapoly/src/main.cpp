@@ -39,12 +39,21 @@ int main(int argc, char** argv)
 
 
 	/* ----------------------------------------------------------------------------------------------------------------------*/
+	// usage:
+	// snapoly 100 0.01 -- process 100 polygons with the tolerance 0.01
+	// snapoly 1000 0.02 -- process 1000 polygons with the tolerance 0.02
+	
 	if (argc < 2) {
 		std::cout << "default tolerance is set to 0.01m" << std::endl;
 	}
 	else {
 		try {
-			double tol = std::stod(argv[1]);
+
+			// how many polygons will be processed
+			// long long control_numbers = std::stod(argv[1]);
+
+			// the value of the tolerance, default: 0.01
+			double tol = std::stod(argv[2]);
 			sr.set_tolerance(tol);
 		}
 		catch (const std::exception& e) {
@@ -54,10 +63,10 @@ int main(int argc, char** argv)
 	}
 	/* ----------------------------------------------------------------------------------------------------------------------*/
 
-	const char* input_file = R"(D:\snapoly\data\Delft\Delft.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\Delft\Delft_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\Delft\Delft_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\Delft\Delft_res.gpkg)";
+	const char* input_file = R"(D:\snapoly\data\Faroe_islands\faroe.gpkg)";
+	const char* tri_file = R"(D:\snapoly\data\Faroe_islands\benchmarking\faroe_tri.gpkg)";
+	const char* output_boundaries_file = R"(D:\snapoly\data\Faroe_islands\benchmarking\faroe_boundaries.gpkg)";
+	const char* res_file = R"(D:\snapoly\data\Faroe_islands\benchmarking\faroe_res.gpkg)";
 
 	// Timer
 	Timer timer;
@@ -84,7 +93,6 @@ int main(int argc, char** argv)
 	sr.snap_rounding(); // not using remove dangles()
 
 
-
 	//double minimum_distance = sr.minimum_distance();
 	//cout << "tolerance: " << sr.tolerance() << '\n';
 	//cout << " minimum distance under the current tolerance: " << minimum_distance << '\n';
@@ -103,7 +111,25 @@ int main(int argc, char** argv)
 
 	sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
 
+	// numbers
 
+	// number of faces
+	long long count_faces = 0;
+	for (auto const& face : sr.triangulation().finite_face_handles())
+		++count_faces;
+	cout << "number of faces: " << count_faces << '\n';
+
+	// number of vertices
+	long long count_vertices = 0;
+	for (auto const& vh : sr.triangulation().finite_vertex_handles())
+		++count_vertices;
+	cout << "number of vertices: " << count_vertices << '\n';
+
+	// number of edges
+	long long count_edges = 0;
+	for (auto const& vh : sr.triangulation().finite_edges())
+		++count_edges;
+	cout << "number of edges: " << count_edges << '\n';
 	// -----------------------------------------------------------------------------------------
 
 

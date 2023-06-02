@@ -213,11 +213,11 @@ void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>
 
 
 		// Save the polygons, field names and types
-		// int countFeature = 0; // for Debug
+		int countFeature = 0; // for Debug and benchmarking
 		for (const auto& poFeature : poLayer) // traverse all the features in one layer
 		{
-			//++countFeature;
-			//cout << countFeature << '\n'; // for Debug
+			++countFeature;
+			//cout << countFeature << '\n'; // for Debug and benchmarking
 
 			OGRGeometry* poGeometry = poFeature->GetGeometryRef();
 			if (poGeometry == nullptr) {
@@ -245,7 +245,11 @@ void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>
 
 			default:
 				break;
-			} // default: other types						
+			} // default: other types		
+
+
+			// for debug and benchmarking
+			//if (countFeature == 20000)break;
 
 		} // end for: all features of a layer
 
@@ -927,10 +931,11 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 	}
 
 	// add triangle faces
-	//int count = 0;
+	long long count_face = 0; // for debug and benchmarking
 	for (auto const& fh : cdt.finite_face_handles()) { // must use reference here: auto const& or Face_handle&
 
 		//std::cout << "count: " << count++ << '\n';
+		++count_face;
 
 		// if the current fh contains at least one constrained edge
 		/*bool contains_constrained = false;
@@ -975,6 +980,7 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 		//std::cout << "--check: create feature" << '\n';
 		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
 	} // end for: finite face handles
+	cout << "--number of faces: " << count_face << '\n';
 	// add triangle faces ------------------------------------------------------------------------------------------------
 
 
@@ -1012,7 +1018,10 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 	}
 
 	// add vertices
+	long long count_vertices = 0; // for debug and benchmarking
 	for (auto const& vh : cdt.finite_vertex_handles()) {
+
+		++count_vertices;
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_vertices->GetLayerDefn());
@@ -1035,6 +1044,7 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 		}
 		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
 	}
+	cout << "--number of vertices: " << count_vertices << '\n';
 	// add vertices ------------------------------------------------------------------------------------------------------
 
 
@@ -1082,7 +1092,10 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 	} // for loop: all finite face handles
 
 	// add edges to OGRLineString
+	long long count_edges = 0; // for debug and benchmarking
 	for (auto const& e : edges) { // change const auto& to index-based?
+
+		++count_edges; // for debug and benchmarking
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_edges->GetLayerDefn());
@@ -1105,6 +1118,7 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 		OGRFeature::DestroyFeature(ogr_feature); // - clean up the local feature
 
 	} // for loop: all edges
+	cout << "--number of edges: " << count_edges << '\n';
 	// add edges ---------------------------------------------------------------------------------------------------------
 
 	// close dataset
