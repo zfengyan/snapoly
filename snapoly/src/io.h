@@ -10,6 +10,16 @@ using namespace geos::geom;
 using namespace geos::operation::polygonize;
 using GEOSPolygon = geos::geom::Polygon; // differentiate from CDTPolygon
 
+//store all the fields
+struct Field
+{
+	int m_code;
+	string m_fclass;
+	string m_name;
+	string m_type;
+	Field() : m_code(0), m_fclass("null"), m_name("null"), m_type("null") {}
+};
+
 class io {
 public:
 	// for using std::unordered_set with Coordinate class
