@@ -90,43 +90,51 @@ void io::add_OGRPolygon_to_polygons(
 	for (auto&& oField : *poFeature) // rvalue reference?
 	{
 		// field name - currently not added
-		// cout << oField.GetName() << '\n';
+		cout << oField.GetName() << '\n'; // type: const char*
 
 		// if field unset or not exist 
-		if (oField.IsUnset()) {
-			printf("(unset),");
+		if (oField.IsUnset() || oField.IsNull()) {
+			cout << "null" << '\n';
 			continue;
 		}
-		if (oField.IsNull()) {
-			printf("(null),");
-			continue;
-		}
+		//if (oField.IsNull()) {
+			//cout << "null" << '\n';
+			//continue;
+		//}
 
 		// get the type
 		//const char* id = nullptr;
+		//cout << "oField.GetType(): " << oField.GetType() << '\n';
 		switch (oField.GetType())
 		{
 		case OFTInteger:
-			printf("%d,", oField.GetInteger());
+			//printf("%d,", oField.GetInteger());
+			cout << "Integer: " << oField.GetInteger() << '\n';
 			break;
 		case OFTInteger64:
-			printf(CPL_FRMT_GIB ",", oField.GetInteger64());
+			//printf(CPL_FRMT_GIB ",", oField.GetInteger64());
+			cout << "Integer64: " << oField.GetInteger64() << '\n';
 			break;
 		case OFTReal:
-			printf("%.3f,", oField.GetDouble());
+			//printf("%.3f,", oField.GetDouble());
+			cout << "real number: " << oField.GetDouble() << '\n';
 			break;
 		case OFTString:
 			// GetString() returns a C string - const char*
 			polygon.id() = string(oField.GetString()); // MUST use std::string
+			cout << "string: " << oField.GetString() << '\n';
 			break;
 		default:
 			// Note: we use GetAsString() and not GetString(), since
 			// the later assumes the field type to be OFTString while the
 			// former will do a conversion from the original type to string.
-			printf("%s,", oField.GetAsString());
+			// printf("%s,", oField.GetAsString());
+			cout << "others: " << oField.GetAsString() << '\n';
 			break;
 		}
 	} // end for: all fields of a feature
+
+	cout << '\n';
 
 	// now add this polygon to the polygons vector
 	polygons.push_back(polygon);
