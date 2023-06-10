@@ -34,27 +34,33 @@ int main(int argc, char** argv)
 
 
 	// Snap rounding
-	Snap_rounding_2 sr;
-	sr.set_tolerance(0.01); // for Delft: 0.01m
+	Snap_rounding_2 sr; // default tolerance: 0.01m
 
 
 	/* ----------------------------------------------------------------------------------------------------------------------*/
 	// usage:
-	// snapoly 100 0.01 -- process 100 polygons with the tolerance 0.01
-	// snapoly 1000 0.02 -- process 1000 polygons with the tolerance 0.02
+
+	const char* input_file = nullptr; //R"(D:\snapoly\data\Rotterdam\Rotterdam.gpkg)";
+	const char* tri_file = "triangulation.gpkg"; //R"(D:\snapoly\data\Rotterdam\benchmarking\Rotterdam_tri.gpkg)";
+	const char* output_boundaries_file = "boundaries.gpkg"; //R"(D:\snapoly\data\Rotterdam\benchmarking\Rotterdam_boundaries.gpkg)";
+	const char* res_file = "snaprounded.gpkg"; //R"(D:\snapoly\data\Rotterdam\benchmarking\Rotterdam_res.gpkg)";
 	
+
+	// input file and the tolerance
 	if (argc < 2) {
-		std::cout << "default tolerance is set to 0.01m" << std::endl;
+		std::cout << "please provide the input file and the tolerance" << '\n';
+		std::cout << "if tolerance is not provided, then it will be set to 0.01 meter by default" << '\n';
 	}
 	else {
 		try {
 
-			// how many polygons will be processed
-			// long long control_numbers = std::stod(argv[1]);
+			// the input file
+			if (argv[1] != nullptr)input_file = argv[1];
 
 			// the value of the tolerance, default: 0.01
-			double tol = std::stod(argv[2]);
-			sr.set_tolerance(tol);
+			if (argv[2] != nullptr)sr.set_tolerance(std::stod(argv[2]));
+			//double tol = std::stod(argv[2]);
+			//sr.set_tolerance(tol);
 		}
 		catch (const std::exception& e) {
 			std::cout << "Error: Invalid double value provided." << e.what() << std::endl;
@@ -63,11 +69,12 @@ int main(int argc, char** argv)
 	}
 	/* ----------------------------------------------------------------------------------------------------------------------*/
 
-	const char* input_file = R"(D:\snapoly\data\Faroe_islands\faroe.gpkg)";
-	const char* tri_file = R"(D:\snapoly\data\Faroe_islands\benchmarking\faroe_tri.gpkg)";
-	const char* output_boundaries_file = R"(D:\snapoly\data\Faroe_islands\benchmarking\faroe_boundaries.gpkg)";
-	const char* res_file = R"(D:\snapoly\data\Faroe_islands\benchmarking\faroe_res.gpkg)";
-
+	if (!input_file) {
+		std::cout << "Error: no input file is provided! " << '\n';
+		return 1;
+	}
+	
+	
 	// Timer
 	Timer timer;
 

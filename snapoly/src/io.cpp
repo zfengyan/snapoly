@@ -249,7 +249,7 @@ void io::add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>
 
 
 			// for debug and benchmarking
-			//if (countFeature == 20000)break;
+			//if (countFeature == 1000)break;
 
 		} // end for: all features of a layer
 
