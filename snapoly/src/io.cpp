@@ -120,6 +120,11 @@ void io::add_OGRPolygon_to_polygons(
 		}
 	} // end for: all fields of a feature
 
+	//cout << '\n';
+
+	// add field to the field_map according to polygon.id()
+	
+
 	// now add this polygon to the polygons vector
 	polygons.push_back(polygon);
 
