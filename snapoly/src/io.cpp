@@ -1,15 +1,6 @@
 #include "pch.h"
 #include "io.h"
 
-// definition of static variables -------------------------------------------------------------------
-// definition of static class member
-// definition allows the linker to find the memory space for the io::spatialReference variable.
-OGRSpatialReference* io::m_spatialReference = nullptr;
-
-// min values of the current extent of a layer
-double io::minX = std::numeric_limits<double>::infinity();
-double io::minY = std::numeric_limits<double>::infinity();
-
 // add OGRPolygon to polygons vector
 void io::add_OGRPolygon_to_polygons(
 	const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature,
@@ -1130,31 +1121,31 @@ void io::export_to_gpkg(const char* filename, CDT& cdt)
 }
 
 
-void snapoly::printer::print(const Vertex_handle& v)
+void snapoly::printer::print(const Vertex_handle& v, const io& ioworker)
 {
-	cout << "(" << v->point().x() + io::minX << ", " << v->point().y() + io::minY << ")";
+	cout << "(" << v->point().x() + ioworker.minX << ", " << v->point().y() + ioworker.minY << ")";
 }
 
-void snapoly::printer::print(const Edge& edge)
+void snapoly::printer::print(const Edge& edge, const io& ioworker)
 {
 	Face_handle face = edge.first;
 	int opposite_vertex = edge.second;
 	int cw = face->cw(opposite_vertex);
 	int ccw = face->ccw(opposite_vertex);
-	cout << "(" << face->vertex(ccw)->point().x() + io::minX << ", " << face->vertex(ccw)->point().y() + io::minY << ")"
-		<< " -- " << "(" << face->vertex(cw)->point().x() + io::minX << ", " << face->vertex(cw)->point().y() + io::minY << ")" << '\n';
+	cout << "(" << face->vertex(ccw)->point().x() + ioworker.minX << ", " << face->vertex(ccw)->point().y() + ioworker.minY << ")"
+		<< " -- " << "(" << face->vertex(cw)->point().x() + ioworker.minX << ", " << face->vertex(cw)->point().y() + ioworker.minY << ")" << '\n';
 }
 
-void snapoly::printer::print(const Face_handle& face)
+void snapoly::printer::print(const Face_handle& face, const io& ioworker)
 {
 	cout << '\n';
 	cout << "-- Face handle: " << '\n';
-	cout << "0: " << "(" << face->vertex(0)->point().x() + io::minX <<
-		", " << face->vertex(0)->point().y() + io::minY << ")" << '\n';
-	cout << "1: " << "(" << face->vertex(1)->point().x() + io::minX <<
-		", " << face->vertex(1)->point().y() + io::minY << ")" << '\n';
-	cout << "2: " << "(" << face->vertex(2)->point().x() + io::minX <<
-		", " << face->vertex(2)->point().y() + io::minY << ")" << '\n';
+	cout << "0: " << "(" << face->vertex(0)->point().x() + ioworker.minX <<
+		", " << face->vertex(0)->point().y() + ioworker.minY << ")" << '\n';
+	cout << "1: " << "(" << face->vertex(1)->point().x() + ioworker.minX <<
+		", " << face->vertex(1)->point().y() + ioworker.minY << ")" << '\n';
+	cout << "2: " << "(" << face->vertex(2)->point().x() + ioworker.minX <<
+		", " << face->vertex(2)->point().y() + ioworker.minY << ")" << '\n';
 	cout << '\n';
 }
 

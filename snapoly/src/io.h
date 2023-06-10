@@ -36,12 +36,20 @@ public:
 public:
 
 	// store the spatialReference information
-	static OGRSpatialReference* m_spatialReference;
+	OGRSpatialReference* m_spatialReference;
 
 	// store the minX and minY of a layer for coordinates shifting - note that a dataset could have more than one layer
 	// now just consider one layer in a dataset
-	static double minX;
-	static double minY;
+	double minX;
+	double minY;
+
+	// store the fields according to the osm_id
+	unordered_map<string, Field> field_map;
+
+	io() :m_spatialReference(nullptr), 
+		minX(std::numeric_limits<double>::infinity()), minY(std::numeric_limits<double>::infinity()),
+		field_map()
+	{}
 
 public:
 
@@ -58,7 +66,7 @@ public:
 	* y = y - minY
 	* where minX and minY are the minimum x and y values in a layer 
 	*/
-	static void add_OGRPolygon_to_polygons(
+	void add_OGRPolygon_to_polygons(
 		const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature,
 		OGRPolygon* poOGRPolygon,
 		vector<CDTPolygon>& polygons);
@@ -69,7 +77,7 @@ public:
 	* the function accepts a const reference of OGRFeatureUniquePtr and based on which the associated information is added
 	* OGRMultiPolygon* indicates which OGRMultiPolygon is added
 	*/
-	static void add_OGRMultiPolygon_to_polygons(
+	void add_OGRMultiPolygon_to_polygons(
 		const std::unique_ptr<OGRFeature, OGRFeatureUniquePtrDeleter>& poFeature,
 		OGRMultiPolygon* poOGRMultiPolygon,
 		vector<CDTPolygon>& polygons);
@@ -79,13 +87,13 @@ public:
 	* reading from the file using GDAL and store the polygons (with attributes attached)
 	* store in polygons vector
 	*/
-	static void add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>& polygons);
+	void add_polygons_from_input_file(const char* input_file, vector<CDTPolygon>& polygons);
 
 
 	/*
 	* export to GPKG file
 	*/
-	static void export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo);
+	void export_to_gpkg(const char* filename, const list<Constraint>& constraintsWithInfo);
 
 
 	/*
@@ -98,7 +106,7 @@ public:
 	* Also CoordinateSequenceB can be the opposite orientation of CoordinateSequenceA: [a, d, c, b, a]
 	* in this case they are also considered as the same
 	*/
-	static bool compare_coordinateSequences_shape(
+	bool compare_coordinateSequences_shape(
 		const CoordinateSequence& C1, const CoordinateSequence& C2);
 
 
@@ -106,7 +114,7 @@ public:
 	* using constraintsWithInfo to build output polygons
 	* the output polygons will be stored into outputPolygonsVec
 	*/
-	static void build_polygons_from_constraints(
+	void build_polygons_from_constraints(
 		list<Constraint>& constraintsWithInfo,
 		vector<CDTPolygon>& resPolygonsVec);
 
@@ -116,7 +124,7 @@ public:
 	* polygons: store the 2D polygon with hole(s) (type: Polygon)
 	* currently attributes only contain id (std::string)
 	*/
-	static void export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec);
+	void export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec);
 
 
 	/**
@@ -127,7 +135,7 @@ public:
 	* @param cdt: constrained dealunay triangulation
 	* @return bool: true for success otherwise false
 	*/
-	static void export_to_gpkg(const char* filename, CDT& cdt);
+	void export_to_gpkg(const char* filename, CDT& cdt);
 
 
 
@@ -140,19 +148,19 @@ namespace snapoly {
 		/*
 		* print out a CDTPoint in the form of: (x, y)
 		*/
-		void print(const Vertex_handle& v);
+		void print(const Vertex_handle& v, const io& ioworker);
 
 
 		/*
 		* print out an Edge(Face_handle, int)
 		*/
-		void print(const Edge& edge);
+		void print(const Edge& edge, const io& ioworker);
 
 
 		/*
 		* print out an Face_handle
 		*/
-		void print(const Face_handle& face);
+		void print(const Face_handle& face, const io& ioworker);
 	}
 }
 

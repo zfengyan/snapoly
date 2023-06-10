@@ -77,7 +77,10 @@ int main(int argc, char** argv)
 	// Timer
 	Timer timer;
 
-	io::add_polygons_from_input_file(input_file, sr.polygons());
+	// io - read and write file
+	io ioworker;
+
+	ioworker.add_polygons_from_input_file(input_file, sr.polygons());
 
 	sr.insert_polygons_to_triangulation();
 
@@ -111,9 +114,9 @@ int main(int argc, char** argv)
 
 	// -----------------------------------------------------------------------------------------
 
-	io::build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
+	ioworker.build_polygons_from_constraints(sr.constraintsWithInfo(), sr.result_polygons());
 
-	io::export_to_gpkg(res_file, sr.result_polygons());
+	ioworker.export_to_gpkg(res_file, sr.result_polygons());
 
 	sr.measure_distortions(); // this function must be called after the io::build_polygons_from_constraints() function
 
