@@ -2,6 +2,7 @@
 
 // standard library headers
 #include <iostream> // for cout, etc.
+#include <cstring> // for comparing two Cstrings
 #include <limits> // for max and min values
 #include <utility> // for std::pair
 #include <queue> // for std::queue
