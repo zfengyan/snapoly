@@ -114,7 +114,7 @@ void io::add_OGRPolygon_to_polygons(
 	//cout << '\n';
 
 	// add field to the field_map according to polygon.id()
-	
+	field_map[polygon.id()] = field_of_this_polygon;
 
 	// now add this polygon to the polygons vector
 	polygons.push_back(polygon);
@@ -713,10 +713,41 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 		std::cerr << "Error: couldn't create layer - polygons." << '\n';
 		return;
 	}
-	// field for layer - polygons
-	OGRFieldDefn out_field_polygons("osm_id", OFTString);
-	out_field_polygons.SetWidth(32);
-	if (out_layer_polygons->CreateField(&out_field_polygons) != OGRERR_NONE) {
+
+	// fields for layer 
+	
+	//polygon id
+	OGRFieldDefn outField_osm_id("osm_id", OFTString);
+	outField_osm_id.SetWidth(32);
+	if (out_layer_polygons->CreateField(&outField_osm_id) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
+		return;
+	}
+	// code: int
+	OGRFieldDefn outField_code("code", OFTInteger);
+	outField_code.SetWidth(32);
+	if (out_layer_polygons->CreateField(&outField_code) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
+		return;
+	}
+	// fclass: string
+	OGRFieldDefn outField_fclass("fclass", OFTString);
+	outField_fclass.SetWidth(32);
+	if (out_layer_polygons->CreateField(&outField_fclass) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
+		return;
+	}
+	// name: string
+	OGRFieldDefn outField_name("name", OFTString);
+	outField_name.SetWidth(32);
+	if (out_layer_polygons->CreateField(&outField_name) != OGRERR_NONE) {
+		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
+		return;
+	}
+	// type: string
+	OGRFieldDefn outField_type("type", OFTString);
+	outField_type.SetWidth(32);
+	if (out_layer_polygons->CreateField(&outField_type) != OGRERR_NONE) {
 		std::cerr << "Error: Creating type field failed - layer polygons" << '\n';
 		return;
 	}
@@ -726,7 +757,13 @@ void io::export_to_gpkg(const char* filename, vector<CDTPolygon>& resPolygonsVec
 
 		// - create local feature for each triangle face and set attribute (if any)
 		OGRFeature* ogr_feature = OGRFeature::CreateFeature(out_layer_polygons->GetLayerDefn());
-		ogr_feature->SetField("osm_id", pgn.id().c_str()); // set attribute
+
+		// set attributs
+		ogr_feature->SetField("osm_id", pgn.id().c_str()); // osm_id
+		ogr_feature->SetField("code", field_map[pgn.id()].m_code); // code
+		ogr_feature->SetField("fclass", field_map[pgn.id()].m_fclass.c_str()); // fclass
+		ogr_feature->SetField("name", field_map[pgn.id()].m_name.c_str()); // name
+		ogr_feature->SetField("type", field_map[pgn.id()].m_type.c_str()); // type
 
 		// - create local geometry object
 		OGRPolygon* ogr_polygon = new OGRPolygon; // using new keyword - need to be deleted by using `delete` later

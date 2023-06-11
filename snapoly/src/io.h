@@ -19,7 +19,7 @@ struct Field
 	string m_fclass;
 	string m_name;
 	string m_type;
-	Field() : m_code(0), m_fclass("null"), m_name("null"), m_type("null") {}
+	Field() : m_code(0), m_fclass("NULL"), m_name("NULL"), m_type("NULL") {}
 };
 // store the fileds according to the osm_id (stored as std::string)
 //unordered_map<int, string> myfield_map;
