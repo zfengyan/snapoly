@@ -1,0 +1,50 @@
+1> CMake generation started for configuration: 'x64-Release'.
+1> Found and using vcpkg toolchain file (D:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake).
+1> Command line: "C:\Windows\system32\cmd.exe" /c "%SYSTEMROOT%\System32\chcp.com 65001 >NUL && "D:\MICROSOFTVISUALSTUDIO\2019\COMMUNITY\COMMON7\IDE\COMMONEXTENSIONS\MICROSOFT\CMAKE\CMake\bin\cmake.exe"  -G "Ninja"  -DCMAKE_BUILD_TYPE:STRING="RelWithDebInfo" -DCMAKE_INSTALL_PREFIX:PATH="D:\snpoly_cmake\out\install\x64-Release" -DCMAKE_C_COMPILER:FILEPATH="D:/MicrosoftVisualStudio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" -DCMAKE_CXX_COMPILER:FILEPATH="D:/MicrosoftVisualStudio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe"  -DCMAKE_MAKE_PROGRAM="D:\MICROSOFTVISUALSTUDIO\2019\COMMUNITY\COMMON7\IDE\COMMONEXTENSIONS\MICROSOFT\CMAKE\Ninja\ninja.exe" -DCMAKE_TOOLCHAIN_FILE="D:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake" "D:\snpoly_cmake" 2>&1"
+1> Working directory: D:\snpoly_cmake\out\build\x64-Release
+1> [CMake] -- Visual Leak Detector (VLD) is not found.
+1> [CMake] -- Using header-only CGAL
+1> [CMake] -- Targetting Ninja
+1> [CMake] -- Target build enviroment supports auto-linking
+1> [CMake] -- Using VC toolset 142.
+1> [CMake] -- Boost include dirs: D:/dev/vcpkg/installed/x64-windows/include
+1> [CMake] -- Boost libraries:    
+1> [CMake] -- Build type: RelWithDebInfo
+1> [CMake] -- USING CXXFLAGS = '/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG'
+1> [CMake] -- USING EXEFLAGS = '/machine:x64 /debug /INCREMENTAL'
+1> [CMake] -- CGAL found
+1> [CMake] -- CGAL version -- 5.3
+1> [CMake] -- Found ZLIB: optimized;D:/dev/vcpkg/installed/x64-windows/lib/zlib.lib;debug;D:/dev/vcpkg/installed/x64-windows/debug/lib/zlibd.lib (found suitable version "1.2.11", minimum required is "1") 
+1> [CMake] -- Found ZLIB: optimized;D:/dev/vcpkg/installed/x64-windows/lib/zlib.lib;debug;D:/dev/vcpkg/installed/x64-windows/debug/lib/zlibd.lib (found version "1.2.11") 
+1> [CMake] -- Reading D:/dev/vcpkg/installed/x64-windows/share/GeoTIFF/geotiff-config.cmake
+1> [CMake] -- GeoTIFF configuration, version 1.7.0
+1> [CMake] --   include directory: ${GeoTIFF_INCLUDE_DIRS}
+1> [CMake] --   ${GeoTIFF_LIBRARIES} set to shared library
+1> [CMake] -- Found ZLIB: optimized;D:/dev/vcpkg/installed/x64-windows/lib/zlib.lib;debug;D:/dev/vcpkg/installed/x64-windows/debug/lib/zlibd.lib (found suitable version "1.2.11", minimum required is "1") 
+1> [CMake] -- Found ZLIB: optimized;D:/dev/vcpkg/installed/x64-windows/lib/zlib.lib;debug;D:/dev/vcpkg/installed/x64-windows/debug/lib/zlibd.lib (found version "1.2.11") 
+1> [CMake] -- GDAL found
+1> [CMake] -- GDAL version -- 3.4.0
+1> [CMake] -- GEOS found
+1> [CMake] -- GEOS version -- 3.10.0
+1> [CMake] -- Configuring done
+1> [CMake] -- Generating done
+1> [CMake] -- Build files have been written to: D:/snpoly_cmake/out/build/x64-Release
+1> Extracted CMake variables.
+1> Extracted source files and headers.
+1> Extracted code model.
+1> Extracted toolchain configurations.
+1> Extracted includes paths.
+1> CMake generation finished.
+
+
+>------ Build All started: Project: snpoly_cmake, Configuration: x64-Release ------
+  [1/5] Building CXX object CMakeFiles\snapoly.dir\snapoly.cpp.obj
+D:\snpoly_cmake\out\build\x64-Release\cl : Command line warning D9025: overriding '/fp:strict' with '/fp:precise'
+  [2/5] Building CXX object CMakeFiles\snapoly.dir\Enhanced_constrained_delaunay_triangulation_2.cpp.obj
+D:\snpoly_cmake\out\build\x64-Release\cl : Command line warning D9025: overriding '/fp:strict' with '/fp:precise'
+  [3/5] Building CXX object CMakeFiles\snapoly.dir\Snap_rounding_2.cpp.obj
+D:\snpoly_cmake\out\build\x64-Release\cl : Command line warning D9025: overriding '/fp:strict' with '/fp:precise'
+  [4/5] Building CXX object CMakeFiles\snapoly.dir\io.cpp.obj
+D:\snpoly_cmake\out\build\x64-Release\cl : Command line warning D9025: overriding '/fp:strict' with '/fp:precise'
+  [5/5] Linking CXX executable snapoly.exe
+
